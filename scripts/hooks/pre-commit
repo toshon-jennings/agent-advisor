@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Runs the hub's own consistency check before every commit.
+#
+# This exists because the alternative is remembering, and the person editing these files
+# is usually an agent that has never read the README. The failure it catches is silent by
+# nature: a platform tree that no longer passes its own native validator looks completely
+# fine in a diff.
+#
+# Checks the hub trees only. Drift between hub and spoke (exit 1) is expected and normal —
+# that is what `--push` is for — so it does not block a commit. A validation failure or a
+# guard refusal does.
+#
+# Bypass with `git commit --no-verify` when you genuinely need to commit a known-broken
+# tree (mid-refactor, for example). Prefer fixing it.
+
+repo_root=$(git rev-parse --show-toplevel)
+sync="$repo_root/scripts/sync-spokes.sh"
+[ -x "$sync" ] || exit 0   # nothing to check yet
+
+out=$("$sync" --check 2>&1); rc=$?
+case "$rc" in
+  0|1) exit 0 ;;                      # valid; 1 is just un-pushed drift
+  *)
+    printf '%s\n' "$out" | grep -E '^  FAIL|^REFUSED|^RESULT' >&2
+    printf '\npre-commit: the hub failed its own --check (exit %d). Commit blocked.\n' "$rc" >&2
+    printf 'Fix the failure above, or use --no-verify if you mean to commit it broken.\n' >&2
+    exit 1
+    ;;
+esac

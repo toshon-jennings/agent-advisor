@@ -361,6 +361,50 @@ else
   fail "no chair fails over to its own model ($detail)"
 fi
 
+# 10. the structural isolation properties actually hold in the agent definitions
+detail=$(python3 - "$repo_root" <<'PY'
+import glob, os, re, sys
+
+root = sys.argv[1]
+agents_dir = os.path.join(root, "plugins/claude-advisor/agents")
+
+# These are the two guarantees the README describes as structural rather than advisory.
+# Both are enforced by an ABSENCE in the tools list, which is the easiest kind of
+# guarantee to revoke by accident: adding a tool for an unrelated reason silently
+# removes it, and nothing about the diff looks wrong.
+MUTATING = {"Write", "Edit", "NotebookEdit", "Bash", "BashOutput", "KillShell"}
+errors = []
+
+for path in sorted(glob.glob(os.path.join(agents_dir, "*.md"))):
+    rel = os.path.relpath(path, root)
+    stem = os.path.splitext(os.path.basename(path))[0]
+    with open(path, encoding="utf-8") as fh:
+        parts = fh.read().split("---", 2)
+    if len(parts) < 3:
+        errors.append(f"{rel}: unreadable frontmatter")
+        continue
+    match = re.search(r'^tools:\s*(.+)$', parts[1], re.M)
+    if not match:
+        errors.append(f"{rel}: no tools list")
+        continue
+    tools = {tool.strip() for tool in match.group(1).split(",") if tool.strip()}
+
+    if stem.startswith("reviewer"):
+        leaked = sorted(tools & MUTATING)
+        if leaked:
+            errors.append(f"{rel}: reviewer holds mutating tools {leaked}")
+    if stem.startswith("implementer") and "Agent" in tools:
+        errors.append(f"{rel}: implementer holds the Agent tool")
+
+print("; ".join(errors))
+PY
+)
+if [ -z "$detail" ]; then
+  ok "reviewer read-only and implementer no-delegation isolation hold"
+else
+  fail "reviewer read-only and implementer no-delegation isolation hold ($detail)"
+fi
+
 if [ "$failed" -eq 0 ]; then
   printf 'summary: %d/%d checks passed\n' "$total" "$total"
 else

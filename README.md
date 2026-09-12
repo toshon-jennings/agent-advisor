@@ -2,6 +2,19 @@
 
 One routing model, three execution harnesses.
 
+> **This repo is maintainer infrastructure — there is nothing here to install.**
+> To *use* selective routing, install the plugin for your harness:
+> [claude-advisor](https://github.com/toshon-jennings/claude-advisor) (Claude Code),
+> [gem-advisor](https://github.com/toshon-jennings/gem-advisor) (Antigravity), or
+> [sol-advisor-portable](https://github.com/toshon-jennings/sol-advisor-portable) (Codex).
+> This repo exists so those three stay honest with each other.
+>
+> It is public for one reason: [`specs/`](specs/) and the
+> [comparison matrix](#the-comparison-matrix) are worth reading whether or not you ever
+> touch the sync tooling. They are a written-down account of what the same routing model
+> costs to enforce on three different harnesses — including where one of them cannot
+> enforce it at all.
+
 Agent Advisor is the canonical hub for three standalone implementations of the same
 selective-routing workflow: **Sol Advisor** on Codex, **Claude Advisor** on Claude Code,
 and **Gem Advisor** on Google Antigravity. The routing model lives here in
@@ -121,8 +134,9 @@ in Codex.
 
 The Claude and Antigravity mechanism is the quietest and therefore the easiest to break by
 accident: it is an *omission*, so adding a tool to the frontmatter for an unrelated reason
-silently revokes the guarantee. `platforms/claude/scripts/verify.sh` checks it explicitly
-for that reason.
+silently revokes the guarantee. `platforms/claude/scripts/verify.sh` check 10 asserts it
+explicitly for that reason — it fails if a `reviewer*` agent gains any mutating tool, or an
+`implementer*` agent gains `Agent`.
 
 ### Can you actually verify a lane ran on the model it was pinned to?
 
