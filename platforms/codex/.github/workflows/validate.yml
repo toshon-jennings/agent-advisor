@@ -20,5 +20,6 @@ jobs:
         run: |
           echo "Running this repository's own native validators."
           echo "CLI-dependent validators are skipped here; see the hub's gen-spoke-checks.sh."
-      - name: sh plugins/sol-advisor/scripts/verify.sh
-        run: sh plugins/sol-advisor/scripts/verify.sh
+      - name: native validator
+        run: |
+          sh plugins/sol-advisor/scripts/verify.sh

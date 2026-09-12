@@ -82,6 +82,17 @@ expand_home() {
 
 normalize_remote() { printf '%s\n' "${1%/}" | sed 's/\.git$//'; }
 
+validator_is_sane() {
+  # A native_validator is executed by run_validators and embedded into generated shell
+  # and YAML by gen-spoke-checks.sh. Both make it code rather than data, so it gets the
+  # same treatment as a managed path: a strict allowlist, checked before anything uses it.
+  case $1 in
+    '' ) return 1 ;;
+    *[!A-Za-z0-9\ ._/=:-]* ) return 1 ;;
+  esac
+  return 0
+}
+
 is_exempt() {
   # True when a path has a component that is exactly .DS_Store, .git or .claude. These
   # are the paths rsync never writes and Guard 5 tolerates, so `git clean` must spare
@@ -274,6 +285,13 @@ EOF
   # Checking the declared interpreter against the script's shebang catches it anywhere.
   local vline script shebang
   while IFS= read -r vline; do
+    if ! validator_is_sane "$vline"; then
+      bad "$platform: native_validator is not a plain command: $vline"
+      printf '           Allowed: letters, digits, space . _ / = : -\n' >&2
+      printf '           It is executed and also embedded into generated code, so a quote\n' >&2
+      printf '           or a semicolon here becomes arbitrary execution at commit time.\n' >&2
+      escalate 3; return 1
+    fi
     case "$vline" in
       "sh "*)
         script=${vline#sh }

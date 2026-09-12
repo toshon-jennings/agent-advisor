@@ -75,6 +75,10 @@ CI checks for exactly that and fails if the generated files are stale.
 - **Isolation is enforced by an absence.** Reviewer agents hold no write tools and no Bash;
   implementers hold no `Agent` tool. Adding a tool for an unrelated reason silently revokes
   the guarantee, so `platforms/claude/scripts/verify.sh` check 10 asserts it.
+- **A `native_validator` value is code, not data.** It is executed by the sync and
+  embedded into the generated hook and workflow. Both the generator and preflight enforce
+  a strict allowlist for that reason — a manifest is a place a payload can hide while the
+  dangerous artifact appears only in generated output nobody re-reads.
 - **Do not claim a check exists without grepping for it.** That exact error shipped in this
   README and survived five review rounds.
 

@@ -17,6 +17,25 @@
 set -uo pipefail
 hub_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
 
+# A native_validator value is embedded into generated shell and YAML that later EXECUTES.
+# That makes it code, not data: a value carrying a quote or a semicolon would break out of
+# the quoting and run whatever followed, on a maintainer's machine at every commit — while
+# the payload sat in a manifest and the dangerous artifact appeared only in generated
+# output nobody re-reads. Same posture as path_is_sane in sync-spokes.sh: validate first,
+# then quote anyway.
+validator_is_sane() {
+  case $1 in
+    '' ) return 1 ;;
+    *[!A-Za-z0-9\ ._/=:-]* ) return 1 ;;
+  esac
+  return 0
+}
+
+shell_quote() {
+  # Belt and braces even after the allowlist: the standard '"'"' transform.
+  printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\"'\"'/g")"
+}
+
 for manifest in "$hub_root"/platforms/*/spoke.manifest; do
   platform=$(basename "$(dirname "$manifest")")
   hooks_dir="$hub_root/platforms/$platform/scripts/hooks"
@@ -48,8 +67,14 @@ run() {
 
 HEAD
     sed -n 's/^native_validator=//p' "$manifest" | while IFS= read -r v; do
-      [ -n "$v" ] && printf 'run %s\n' "'$v'"
-    done
+      [ -n "$v" ] || continue
+      if ! validator_is_sane "$v"; then
+        printf 'ERROR: %s: native_validator is not a plain command: %s\n' "$platform" "$v" >&2
+        printf '       Allowed characters: letters, digits, space . _ / = : -\n' >&2
+        exit 3
+      fi
+      printf 'run %s\n' "$(shell_quote "$v")"
+    done || exit 3
     cat <<'TAIL'
 
 if [ "$status" -ne 0 ]; then
@@ -89,9 +114,15 @@ jobs:
           echo "CLI-dependent validators are skipped here; see the hub's gen-spoke-checks.sh."
 WFHEAD
     sed -n 's/^native_validator=//p' "$manifest" | while IFS= read -r v; do
+      if ! validator_is_sane "$v"; then
+        printf 'ERROR: %s: native_validator is not a plain command: %s\n' "$platform" "$v" >&2
+        exit 3
+      fi
       case "$v" in
         sh\ *|bash\ *)
-          printf '      - name: %s\n        run: %s\n' "$v" "$v"
+          # Block scalar with the command on its own line: never interpolated into a YAML
+          # scalar where a quote or colon could restructure the document.
+          printf '      - name: native validator\n        run: |\n          %s\n' "$v"
           ;;
         *)
           printf '      # skipped in CI (needs a CLI that cannot be installed on a runner): %s\n' "$v"
