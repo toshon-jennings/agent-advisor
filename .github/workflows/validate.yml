@@ -1,0 +1,69 @@
+# The hub's backstop.
+#
+# `scripts/sync-spokes.sh --check` cannot run here: it compares against three spoke
+# working copies that do not exist on a runner. But the hub's central claim is that
+# `platforms/<p>/` mirrors each spoke's repository root exactly, which means every
+# platform's own native validator runs in place — so CI runs exactly what Guard 2 runs
+# before any export, just without the spoke comparison.
+#
+# Validators that shell out to a proprietary CLI (`claude plugin validate`,
+# `agy plugin validate`) are not installable on a runner and stay local. The repos'
+# portable checkers are the ones that matter here.
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  platforms:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: codex — native validator
+        working-directory: platforms/codex
+        run: sh plugins/sol-advisor/scripts/verify.sh
+
+      - name: claude — native validator
+        working-directory: platforms/claude
+        run: sh scripts/verify.sh
+
+      - name: antigravity — native validator
+        working-directory: platforms/antigravity
+        run: sh scripts/verify.sh
+
+      - name: shell syntax
+        run: |
+          for f in scripts/*.sh scripts/hooks/pre-commit platforms/*/scripts/hooks/pre-commit; do
+            [ -f "$f" ] || continue
+            bash -n "$f" && echo "ok  $f"
+          done
+
+      - name: generated files are current
+        run: |
+          # A manifest edited without re-running the generator would leave the hook and
+          # the workflow enforcing a different validator list than the sync does. That
+          # divergence is invisible in a diff, so it is checked rather than remembered.
+          ./scripts/gen-spoke-checks.sh >/dev/null
+          # Scoped to the generated paths only: an unscoped `git diff` would also flag
+          # unrelated working-tree edits, which makes the signal useless anywhere but a
+          # clean CI checkout.
+          if ! git diff --quiet -- 'platforms/*/scripts/hooks/pre-commit' 'platforms/*/.github/workflows/validate.yml'; then
+            echo "Generated hooks/workflows are stale. Run ./scripts/gen-spoke-checks.sh and commit." >&2
+            git diff --stat -- 'platforms/*/scripts/hooks/pre-commit' 'platforms/*/.github/workflows/validate.yml' >&2
+            exit 1
+          fi
+          echo "ok  hooks and workflows match the manifests"
+
+      - name: managed paths exist
+        run: |
+          for m in platforms/*/spoke.manifest; do
+            p=$(dirname "$m")
+            sed -n '/^\[paths\]/,$p' "$m" | tail -n +2 | grep -v '^[[:space:]]*$' | grep -v '^#' |
+            while IFS= read -r rel; do
+              [ -e "$p/$rel" ] || { echo "missing managed path: $p/$rel" >&2; exit 1; }
+            done
+          done
+          echo "ok  every managed path is present"

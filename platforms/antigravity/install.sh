@@ -118,3 +118,16 @@ agy plugin validate "$plugin_destination" >/dev/null 2>&1 ||
   fail "installed gem-advisor plugin failed validation"
 
 printf '%s\n' 'INSTALL PASSED: gem-advisor is installed. In Antigravity, use /gem or invoke gem-advisor: <prompt>.'
+
+# Enable this repository's pre-commit hook. `core.hooksPath` is local git config and does
+# not survive a clone, so a fresh checkout has no hook until something sets it. Doing it
+# here means the person who runs the installer never has to know that. Harmless if already
+# set, skipped outside a git work tree (a tarball copy, for example).
+if command -v git >/dev/null 2>&1 &&
+   git -C "$script_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1 &&
+   [ -x "$script_dir/scripts/hooks/pre-commit" ]; then
+  if [ "$(git -C "$script_dir" config core.hooksPath 2>/dev/null)" != "scripts/hooks" ]; then
+    git -C "$script_dir" config core.hooksPath scripts/hooks &&
+      printf '%s\n' "enabled pre-commit hook (core.hooksPath=scripts/hooks)"
+  fi
+fi

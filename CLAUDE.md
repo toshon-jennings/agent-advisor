@@ -48,11 +48,22 @@ Each spoke has one too, generated from its `spoke.manifest` by
 disagree. **Regenerate and `--push` after changing any `native_validator` line.**
 
 `core.hooksPath` is local git config, not a tracked file, so it does not survive a fresh
-clone. One command per clone, in the spoke:
+clone. **You should never have to set it by hand** — three things do it for you:
 
-```bash
-git config core.hooksPath scripts/hooks
-```
+- `scripts/sync-spokes.sh` sets it for the hub on any invocation, and for each spoke it
+  successfully pushes to.
+- `install.sh` sets it in the Codex and Antigravity spokes.
+- **CI is the backstop that needs no local state at all.** Every repo has a `validate`
+  workflow running the same native validators on push and pull request, so a clone with
+  no hook configured still cannot land a broken tree unnoticed.
+
+The hook is a speed optimisation — it fails in two seconds instead of sixty. CI is the
+guarantee. If you ever find yourself writing "remember to…", that is the signal to add a
+layer here instead.
+
+`.github/workflows/validate.yml` is generated too, so a manifest edited without
+regenerating would leave CI and the hook enforcing different validator lists. The hub's
+CI checks for exactly that and fails if the generated files are stale.
 
 ## Things that have bitten before
 

@@ -476,6 +476,12 @@ EOF
 
   if [ "$post_ok" -eq 1 ]; then
     applied+=("$platform")
+    # The hook was just written into the spoke; leaving it inert would be half a job.
+    if [ -x "$spoke/scripts/hooks/pre-commit" ] &&
+       [ "$(git -C "$spoke" config core.hooksPath 2>/dev/null)" != "scripts/hooks" ]; then
+      git -C "$spoke" config core.hooksPath scripts/hooks &&
+        note "  hooks    : enabled core.hooksPath=scripts/hooks in the spoke"
+    fi
     note "  pushed   : $spoke updated, validated, and verified in sync"
     return 0
   fi
@@ -545,6 +551,16 @@ for required in rsync git diff; do
   command -v "$required" >/dev/null 2>&1 || {
     printf 'ERROR: required command unavailable: %s\n' "$required" >&2; exit 4; }
 done
+
+# `core.hooksPath` is local git config and does not survive a clone, so a fresh checkout
+# of the hub has no pre-commit hook until something sets it. Set it here: this script is
+# the thing anyone working on the hub runs first, so nobody has to be told.
+if git -C "$hub_root" rev-parse --is-inside-work-tree >/dev/null 2>&1 &&
+   [ -x "$hub_root/scripts/hooks/pre-commit" ] &&
+   [ "$(git -C "$hub_root" config core.hooksPath 2>/dev/null)" != "scripts/hooks" ]; then
+  git -C "$hub_root" config core.hooksPath scripts/hooks &&
+    note "enabled the hub's pre-commit hook (core.hooksPath=scripts/hooks)"
+fi
 
 scratch=$(mktemp -d) || { printf 'ERROR: could not create a temp dir\n' >&2; exit 4; }
 trap 'rm -rf "$scratch"' EXIT
