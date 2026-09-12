@@ -1,0 +1,10 @@
+.DS_Store
+*.log
+__pycache__/
+.claude/
+
+# The user's global excludes (~/.config/git/ignore) drop SUMMARY.md and HANDOFF.md.
+# Untracked means git cannot restore them, which also makes them undeliverable by the
+# agent-advisor sync (its Guard 5 refuses to let rsync touch an unrecoverable file).
+!SUMMARY.md
+!HANDOFF.md

@@ -1,0 +1,122 @@
+# MISTAKES — agent-advisor
+
+Newest first. Format: **What happened | Root cause | Consequence | The rule that prevents
+repeat**.
+
+## 2026-09-12 — Assumed a repo-local script was executable
+
+**What happened:** the first attempt to run the Codex spoke's native validator from the
+hub failed with `permission denied`. The manifest named it as a bare path, as if it were
+an executable.
+
+**Root cause:** `plugins/sol-advisor/scripts/verify.sh` is mode `644` in the spoke — the
+import preserved that faithfully. Two sibling scripts in the same directory *are* mode
+`755`, which made the assumption look safe.
+
+**Consequence:** none beyond one failed command. Caught immediately, before the manifest
+format was settled.
+
+**The rule:** a `native_validator` entry is a **shell command string**, not a path — it is
+run as `sh -c "<line>"` from the tree root, and the manifest writes `sh path/to/x.sh`
+explicitly. Never infer that a checked-in script carries its exec bit.
+
+## 2026-09-12 — Nearly tested the destructive push path against a live spoke
+
+**What happened:** while verifying drift detection, a probe comment was appended to
+`platforms/claude/README.md`. The obvious next step was to run `--push` and watch it
+propagate — into `~/claude-advisor`, a live plugin source repository.
+
+**Root cause:** convenience. The real spokes were right there and already wired up.
+
+**Consequence:** none. The probe was reverted and the push was instead exercised against a
+synthetic hub/spoke pair built in the scratchpad, which also made it possible to test
+rollback, the dirty-tree guard, and the wrong-remote guard — none of which could have been
+tested safely against a live repo at all.
+
+**The rule:** test destructive tooling against a fixture, never against the thing it is
+meant to protect. The fixture is not the weaker test here; it is the *stronger* one,
+because it can be driven into failure states on purpose.
+
+## 2026-09-12 — Shipped a fail-closed guard set with a path-traversal hole
+
+**What happened:** the first version of `scripts/sync-spokes.sh` validated that every
+managed path *existed in the hub*, and nothing else. It never checked that the path was
+relative, normalized, or contained. A `[paths]` entry of `..` would have made the
+`rsync --delete` destination the spoke's **parent directory**.
+
+**Root cause:** I treated the manifest as trusted configuration because I wrote it. The
+guard set was designed against the failure I was imagining — a stale or invalid spoke —
+rather than against its own input.
+
+**Consequence:** none in practice; caught by the cross-vendor review before any real push.
+But the defect was in the one artifact whose entire purpose is to be fail-closed, and my
+own testing had exercised every guard I thought of and therefore proved nothing about the
+one I hadn't.
+
+**The rule:** a path that reaches `rm`, `--delete`, or a destination argument is untrusted
+input regardless of where it came from. Validate shape (relative, no `.`/`..`/`~`), resolve
+it physically, prove containment in the intended root, and reject symlinked components —
+before it is used for anything. "I wrote this config" is not a threat model.
+
+## 2026-09-12 — Claimed structural enforcement that the files do not contain
+
+**What happened:** `README.md` and `specs/role-contracts.md` asserted that all three
+harnesses structurally prevent an implementer from delegating onward — citing "custom-agent
+profiles with no nested invocation" for Codex and `enable_subagent_tools: false` for
+Antigravity. Neither exists. The Codex TOMLs carry only model and instruction fields; the
+Antigravity booleans appear solely in agent **prose bodies**, never in frontmatter.
+
+**Root cause:** I read each project's self-description and repeated it, instead of reading
+the agent definitions and describing what was actually in them. The Antigravity files
+assert the boolean *about themselves*, which is exactly the kind of claim that survives
+being copied because it sounds like configuration.
+
+**Consequence:** a comparison matrix — whose only job is accuracy — overstated two of three
+cells, in a document that elsewhere lectures about not confusing a pin with an observation.
+
+**The rule:** when documenting what a file enforces, grep the file for the mechanism and
+quote what is there. A project's description of its own guarantees is a claim to verify,
+not a source to cite — and that applies most strongly when the claim is flattering and
+conveniently phrased.
+
+## 2026-09-12 — Fixed a guard but left the unchecked read that made it moot
+
+**What happened:** the two-phase preflight rewrite stashed each platform's spoke path to a
+scratch file, then read it back in phase 2 with a bare `spoke=$(cat ...)`. A failed read
+would leave `$spoke` empty, turning every destination `"$spoke/$rel"` into the **absolute**
+path `/$rel` — writing outside the spoke entirely, past every containment guard I had just
+added for exactly that class of failure.
+
+**Root cause:** I audited the paths that came from the manifest, because that was the
+finding I was responding to, and treated values I had written myself one phase earlier as
+trustworthy. The guard and the hole were added in the same edit.
+
+**Consequence:** none — caught by the second review before any real push. But it would have
+defeated the round-1 fix completely, which is the worst kind of defect: one that makes a
+security control look present while routing around it.
+
+**The rule:** when you add a containment check, enumerate *every* way the value it protects
+can be produced, including the ones introduced by the same change. A guard on one input
+path is not a guard. And check the exit status of every command whose empty output is
+indistinguishable from a benign result.
+
+## 2026-09-12 — Wrote a NUL-safe filter in a shell that cannot hold NULs
+
+**What happened:** responding to a finding that the git-ignored-file check mishandled
+filenames containing newlines, I rewrote it to read NUL-delimited output with
+`read -r -d ''`. The rewrite was still completely broken, and a test caught it: the
+dangerous file was destroyed exactly as before.
+
+**Root cause:** the data never survived to reach the loop. **Bash strips NUL bytes in
+command substitution**, so `listing=$(git ls-files -z ...)` silently discarded every
+delimiter and concatenated the entries. I had written the correct *consumer* of NUL-safe
+data while feeding it through a channel that cannot carry it.
+
+**Consequence:** none — the test was written before the fix was believed. But had I
+verified by reading the diff instead of running it, the finding would have been marked
+fixed while the hole stayed open, which is worse than never having addressed it.
+
+**The rule:** a fix for a data-handling bug is not verified until the original hostile
+input is replayed and observed to fail safely. And in shell specifically: NUL-delimited
+data must go through a file or a pipe, never through `$(...)` — command substitution is a
+text channel and quietly truncates at the first NUL boundary.

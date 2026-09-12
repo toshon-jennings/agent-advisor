@@ -1,0 +1,23 @@
+# Claude Code spoke — Claude Advisor
+#
+# The hub owns every path listed under [paths]. Anything in the spoke that is not
+# listed here is spoke-local and is never touched by scripts/sync-spokes.sh:
+# HANDOFF.md, MISTAKES.md, .gitignore, and the git metadata itself.
+
+platform_name=Claude Code
+spoke_path=~/claude-advisor
+spoke_remote=https://github.com/toshon-jennings/claude-advisor.git
+
+# Run from the tree root, in order. The first is the repo's own structural checker;
+# the second is the harness-native marketplace/plugin manifest check.
+native_validator=sh scripts/verify.sh
+native_validator=claude plugin validate .
+
+[paths]
+.claude-plugin
+plugins
+scripts
+README.md
+ORIGIN.md
+LICENSE
+.gitignore

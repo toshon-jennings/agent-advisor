@@ -1,0 +1,28 @@
+# Antigravity spoke — Gem Advisor
+#
+# The hub owns every path listed under [paths]. Anything in the spoke that is not
+# listed here is spoke-local and is never touched by scripts/sync-spokes.sh:
+# HANDOFF.md, MISTAKES.md, .gitignore, and the git metadata itself.
+
+platform_name=Antigravity
+spoke_path=~/gem-advisor
+spoke_remote=https://github.com/toshon-jennings/gem-advisor.git
+
+# Run from the tree root, in order. The first is the repo's own structural checker;
+# the second is Antigravity's native plugin validator.
+native_validator=sh scripts/verify.sh
+native_validator=agy plugin validate .
+
+[paths]
+agents
+commands
+rules
+skills
+scripts
+plugin.json
+install.sh
+README.md
+ORIGIN.md
+SUMMARY.md
+LICENSE
+.gitignore

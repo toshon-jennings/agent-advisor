@@ -1,0 +1,26 @@
+# Codex spoke — Sol Advisor / Astra / Daybreak
+#
+# The hub owns every path listed under [paths]. Anything in the spoke that is not
+# listed here is spoke-local and is never touched by scripts/sync-spokes.sh:
+# HANDOFF.md, MISTAKES.md, .gitignore, .claude/, and the git metadata itself.
+
+platform_name=Codex
+spoke_path=~/sol-advisor-portable
+spoke_remote=https://github.com/toshon-jennings/sol-advisor-portable
+
+# Run from the tree root. The Codex CLI ships no `plugin validate` subcommand, so the
+# repo's own agent/profile checker is the native validator.
+native_validator=sh plugins/sol-advisor/scripts/verify.sh
+
+[paths]
+.agents
+plugins
+prompts
+skills
+install.sh
+README.md
+PORTABLE.md
+SUMMARY.md
+UPSTREAM.lock
+LICENSE
+.gitignore
