@@ -179,7 +179,7 @@ before acting. All 7 are now corrected:
       prose bodies, never in frontmatter — the real mechanism there is the `tools:`
       allowlist omission.
 - [x] **F7 — the canonical failover contract conflicts with Antigravity.** Recorded rather
-      than smoothed over; see the open item below.
+      than smoothed over at the time; resolved later — see item 5 below.
 
 Regression found and fixed during re-verification (not reviewer-reported): the two-phase
 rewrite expanded `"${ready[@]}"` on a possibly-empty array, which under `set -u` in
@@ -375,25 +375,52 @@ more documentation-consistency issues.
       issues rather than defects that lose data. This is a spend decision, not a technical
       one, which is why it is recorded here rather than taken unilaterally.
 
-### 5. Canonical failover contract conflicts with Antigravity (finding 7)
+### 5. RESOLVED — the Antigravity failover conflict
 
-`specs/reviewer-verdict.md` requires the orchestrator to ask the user and wait before
-falling back to a weaker review lane. `platforms/antigravity/skills/gem-advisor-max/SKILL.md`
-mandates the opposite: automatic failover on quota exhaustion, disclosed afterwards, and
-explicitly "never stall, abort, or hang."
+`specs/reviewer-verdict.md` required the user to authorize any review failover;
+`gem-advisor-max` mandated automatic failover and "never stall." Recorded earlier as an
+unresolved product decision.
 
-Both disclose; they differ on **who decides**. Antigravity's position is defensible on its
-own terms — its whole design treats Claude quota exhaustion as an expected operating
-condition rather than an exception, and a workflow that halts on an expected condition
-halts constantly.
+**Resolving it found a real defect, which is why it was not a matter of taste.** Under a
+`Gemini Pro 3.1` chair with a Claude reviewer, the automatic rule failed over to
+`gem-reviewer` on `Gemini Pro 3.1` — **the chair's own model** — and step 3 instructed the
+orchestrator to "note in the final acceptance report that clean fresh-context review was
+performed." Reviewer and orchestrator would be the same model, which is context-clean only,
+reported as though nothing had changed.
 
-Not resolved here: resolving it means either relaxing the canonical spec for quota-driven
-failover, or changing a live plugin's behavior. That is your product decision, not an
-editorial one. Documented honestly in `specs/reviewer-verdict.md` and `README.md` in the
-meantime.
+Both documents were arguing about the wrong variable. The question was never automatic
+versus authorized; it is **does the acceptance claim change**. The canonical spec's own
+justification proves it — authorization exists so an orchestrator cannot "reach the weaker
+reviewer by supplying worse input," and that incentive only exists when the target *is*
+weaker.
 
-- [ ] Decide which way this goes, then align the spec or the Antigravity skill through the
-      hub
+The unified rule, now in `specs/reviewer-verdict.md`:
+
+| Failover | Requirement |
+|---|---|
+| Preserves the independence tier | Automatic. Declare it; do not stall. |
+| Lowers the tier | Authorization required. Ask and wait. |
+| Target shares the chair's model | Never valid. Refuse and stop. |
+
+One rule, different behaviour per harness because their lanes differ — not two rules:
+
+- **Claude Code always asks.** Its only in-process failover beneath an Opus chair is
+  cross-model same-vendor, strictly lower than the cross-vendor lane it declares. Every
+  failover it can reach degrades the claim. Its behaviour is unchanged; the workflow now
+  explains that this is its lanes producing an absolute rather than a stricter rule.
+- **Antigravity usually does not ask.** A 429 under a Gemini chair is answered by moving to
+  `GPT-OSS`, still cross-vendor, tier preserved — automatic, declared, no stall. It stalls
+  only when the sole reachable lane is weaker, which is the one case worth stalling for.
+
+Changed: `specs/reviewer-verdict.md` (rule rewritten, divergence section replaced with how
+each harness lands), `README.md`, `platforms/claude/.../orchestration/SKILL.md` (framing
+only, no behaviour change), and on the Antigravity side `gem-advisor-max/SKILL.md`,
+`gem-advisor/references/role-contracts.md` (including the lane table's failover column),
+`rules/AGENTS.md`, `SUMMARY.md`, and `agents/gem-reviewer.md` — whose `FAILOVER NOTE` field
+now requires naming the independence actually carried rather than just noting that a
+failover happened.
+
+- [x] Decided and aligned through the hub; exported and validated.
 
 ## Known blind spots
 

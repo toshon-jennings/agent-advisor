@@ -31,4 +31,5 @@ VERDICT: ship | fix-first | rethink
 REASON: <decisive evidence-based reason>
 FINDINGS: <precise file references and required fixes, or none>
 RESIDUAL RISK: <most important remaining risk, or none>
-FAILOVER NOTE: <none | note if failover model was used due to Claude quota>
+FAILOVER NOTE: <none | the lane that actually ran and the independence it carries:
+  cross-vendor | cross-model same-vendor | context-clean only>

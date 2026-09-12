@@ -77,16 +77,40 @@ reviewer configuration depends on the primary chair:
 - If the primary orchestrator is Claude Opus, the preferred reviewer is `Gemini Pro 3.1`
   for true cross-model validation.
 
-### Automatic Failover Rule
-Claude quota often runs out quickly under heavy usage. If Claude is selected for review
-or complex implementation and encounters rate limits (429), quota exhaustion, or credit
+### Quota failover rule
+
+Claude quota runs out quickly under heavy agentic usage. At this tier that is an expected
+operating condition, not an exception, so the default is to keep moving — but only as far
+as the review stays as independent as the one declared.
+
+**The gate is the independence tier, not the mechanism.** Failing over to an equally
+independent lane changes nothing the acceptance claims, so it needs no permission. Failing
+over to a weaker one changes exactly what the acceptance claims, so it is the user's call.
+
+If Claude is selected for review and hits rate limits (429), quota exhaustion, or credit
 depletion:
-1. Immediately log the failover event in the selective route audit trail:
-   `failover: Claude quota depleted -> failing over to Gemini Pro 3.1 fresh-context review`
-2. Spawn `gem-reviewer` on `Gemini Pro 3.1` (or `GPT-OSS`).
-3. Note in the final acceptance report that clean fresh-context review was performed under
-   the recorded failover policy.
-4. **Never stall, abort, or hang the task due to third-party quota exhaustion.**
+
+1. Log the failover in the selective route audit trail, naming both lanes and the realized
+   independence:
+   `failover: Claude quota depleted -> GPT-OSS fresh-context review (cross-vendor preserved)`
+2. **Prefer a lane that preserves the tier.** Under a Gemini chair, a Claude reviewer is
+   cross-vendor; `GPT-OSS` is also cross-vendor, so moving there preserves the claim.
+   Spawn it and continue without stalling.
+3. **Never fail over to a model the chair is running.** Under a Gemini Pro 3.1 chair,
+   `gem-reviewer` on `Gemini Pro 3.1` is context-clean and nothing more — the reviewer and
+   the orchestrator are the same model. That is not a weaker review of the same kind; it is
+   the removal of independent review while the transcript still says a review happened.
+   Refuse it as a failover target.
+4. **If the only reachable lane is weaker, stop and ask.** Say plainly that the review will
+   be weaker than the one declared, name both lanes, and offer the repair if one exists.
+   Wait for the user. This is the one case where stalling is correct, because the
+   alternative is reporting an independence the run did not have.
+5. State the realized independence in the acceptance report — cross-vendor, cross-model
+   same-vendor, or context-clean only. Never describe a failover review as "clean
+   fresh-context review" without saying which tier it actually carried.
+
+**Never stall on quota exhaustion that a tier-preserving failover can absorb.** Do stall
+when continuing would silently downgrade the acceptance claim.
 
 ## Review contract
 

@@ -317,6 +317,15 @@ None of the three is the lane being unavailable, and failing over from them woul
 chair reach the weaker reviewer by supplying worse input — a choice that would look
 identical to bad luck in the transcript. Fix the cause and rerun.
 
+**Why this chair always asks.** The gate on a failover is whether it lowers the review's
+independence tier, not whether it is automatic: a failover onto an equally independent lane
+changes nothing the acceptance claims and needs no permission. Beneath an Opus chair there
+is no such lane. `reviewer-codex` is cross-vendor; the only in-process failover,
+`reviewer-sonnet`, is cross-model *same-vendor*, which is strictly lower — and
+`claude-advisor:reviewer` is pinned to this chair's own model, which is not a failover
+target at all. Every failover available here degrades the claim, so every failover here is
+authorized. That is this chair's lanes producing an absolute, not a stricter rule.
+
 Exits 2 and 3 are weaker evidence than they look. The CLI's presence, its `CODEX_HOME`,
 and its login state are all reachable from the session that decides whether to fail over,
 so "the lane was unavailable" is a claim by the party that benefits from it, not an

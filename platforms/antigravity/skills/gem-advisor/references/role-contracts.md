@@ -43,7 +43,7 @@ or unregistered is a hard stop.
 |---|---|---|---|---|---|
 | `gem-implementer-bounded` | `Gemini Flash 3.8` (`flash`) | `Claude Sonnet` | `Gemini Flash 3.7 / 3.6` | `enable_write_tools: true`, `enable_subagent_tools: false` | Delegate/full bounded, fully specified work |
 | `gem-implementer-complex` | `Gemini Pro 3.1` (`pro`) | `Claude Opus` | `Gemini Pro 3.1` | `enable_write_tools: true`, `enable_subagent_tools: false` | Delegate/full judgment-heavy or high-risk work |
-| `gem-reviewer` | `Gemini Pro 3.1` (`pro`) | `Claude Opus` | `Gemini Pro 3.1` / `GPT-OSS` | `enable_write_tools: false`, `enable_subagent_tools: false` | Audit/full fresh review |
+| `gem-reviewer` | `Gemini Pro 3.1` (`pro`) | `Claude Opus` | `GPT-OSS` (tier-preserving); `Gemini Pro 3.1` only when the chair is **not** Gemini Pro, and only with user authorization | `enable_write_tools: false`, `enable_subagent_tools: false` | Audit/full fresh review |
 
 Two isolation invariants are enforced by Antigravity tool definitions rather than prose:
 
@@ -62,11 +62,26 @@ quotas deplete quickly under heavy agentic tasks. Gem Advisor manages quotas def
 
 - **Everyday Tier Zero Claude Burn**: The everyday tier runs entirely on the Gemini
   backbone (`Flash 3.8` and `Pro 3.1`), leaving Claude allowances intact for high-stakes work.
-- **Graceful Quota Failover**: If Claude Opus or Sonnet is selected for review or complex
-  implementation and encounters rate limits (429), quota exhaustion, or credit depletion,
-  the orchestrator logs a machine-auditable failover in the selective route declaration:
-  `failover: Claude quota depleted -> failing over to Gemini Pro 3.1 fresh-context review`
-  Execution continues immediately without restarting or failing the task.
+- **Graceful Quota Failover, gated by independence tier**: If Claude Opus or Sonnet is
+  selected and encounters rate limits (429), quota exhaustion, or credit depletion, the
+  orchestrator logs a machine-auditable failover in the selective route declaration naming
+  both lanes and the realized independence:
+  `failover: Claude quota depleted -> GPT-OSS fresh-context review (cross-vendor preserved)`
+
+  **For an implementer lane**, execution continues immediately — an implementer carries no
+  independence claim, so swapping its model changes nothing the acceptance asserts.
+
+  **For the reviewer lane**, the acceptance rests on a statement about independence, so the
+  failover target decides whether permission is needed:
+  - A target that preserves the tier (cross-vendor → another cross-vendor lane) is
+    automatic. Declare it and continue without stalling.
+  - A target that lowers the tier requires explicit user authorization. Ask and wait.
+  - A target running the chair's own model is never valid. Under a Gemini Pro 3.1 chair,
+    `gem-reviewer` on `Gemini Pro 3.1` makes reviewer and orchestrator the same model:
+    context-clean only, which is the absence of independent review rather than a weaker
+    form of it. Refuse it.
+
+  Never report a failover review without naming the independence it actually carried.
 - **Declarative Model Pins**: Cite the agent definition and `invoke_subagent` arguments as
   the pin's source. If runtime metadata does not expose realized model telemetry, do not
   claim observed routing.

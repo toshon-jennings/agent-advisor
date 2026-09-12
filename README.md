@@ -62,20 +62,32 @@ So the specs are the thing the three implementations are checked *against*, not 
 they share. The hub's job is to keep them honest with each other, not to pretend they are
 the same program.
 
-### Where they currently disagree
+### Where they differ, and why that is not disagreement
 
-"One routing model" is the goal, not a finished fact. One substantive conflict is known
-and is recorded rather than smoothed over:
+The routing model is uniform. The harnesses differ in what lanes they can physically
+reach, and one rule covers both cases rather than two rules that conflict.
 
-**Review failover.** [`specs/reviewer-verdict.md`](specs/reviewer-verdict.md) requires the
-orchestrator to *ask the user and wait* before falling back to a weaker review lane.
-`platforms/antigravity/skills/gem-advisor-max/SKILL.md` mandates the opposite — automatic
-failover on quota exhaustion, disclosed afterwards, and explicitly "never stall, abort, or
-hang." Both disclose; they differ on who decides. Antigravity's position is defensible on
-its own terms (quota exhaustion is an expected condition there, not an exception), which is
-why this is flagged for a decision rather than silently normalized. See
-[`specs/reviewer-verdict.md`](specs/reviewer-verdict.md#known-divergence--antigravity-does-not-implement-this-section)
-and `HANDOFF.md`.
+**Review failover is gated by the independence tier, not by whether it is automatic.** An
+acceptance rests on a claim about how independent the review was. A failover that lands on
+an equally independent lane does not change that claim, so it needs no permission. One that
+lands on a weaker lane changes exactly what is being claimed, so it is the user's call. A
+lane running the chair's own model is never a valid target at all — that is the removal of
+independent review, not a weaker version of it.
+
+The same rule produces different behaviour in each harness because their lanes differ:
+
+- **Claude Code always asks.** Its only in-process failover beneath an Opus chair is
+  cross-model *same-vendor* — strictly lower than the cross-vendor lane it declares. Every
+  failover available to it lowers the claim.
+- **Antigravity usually does not.** Under a Gemini chair with a Claude reviewer, a 429 can
+  be answered by moving to another cross-vendor lane, preserving the tier. Its heavyweight
+  tier treats Claude quota exhaustion as an expected condition rather than an exception,
+  and a workflow that halts on an expected condition halts constantly.
+
+Getting here fixed a real defect rather than settling an argument: Antigravity's failover
+previously routed to `Gemini Pro 3.1` — which can be the chair's own model — and reported
+it as "clean fresh-context review." See
+[`specs/reviewer-verdict.md`](specs/reviewer-verdict.md#failover-always-declared-authorized-when-the-claim-changes).
 
 ## The comparison matrix
 

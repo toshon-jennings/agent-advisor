@@ -67,7 +67,7 @@
 1. **Selective Route Declaration**: Emits `SELECTIVE ROUTE` before any task tool calls.
 2. **Single Auxiliary Maximum**: Solo default; at most one auxiliary subagent permitted by default.
 3. **Zero Claude Burn on Everyday Tier**: Everyday tasks run entirely on Gemini Flash 3.8 and Gemini Pro 3.1.
-4. **Graceful Failover**: Automatic fallback to Gemini Pro 3.1 fresh-context review if Claude hits 429 or quota limits.
+4. **Graceful Failover, gated by independence tier**: If Claude hits 429 or quota limits, fall back automatically to a lane that preserves the declared independence (`GPT-OSS` under a Gemini chair). A fallback that would lower the tier needs user authorization; one running the chair's own model is refused outright.
 5. **Enforced Boundary Discipline**: Implementers have write tools but cannot spawn subagents; reviewer is strictly read-only with no bash.
 
 ---
