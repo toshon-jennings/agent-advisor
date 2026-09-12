@@ -43,6 +43,17 @@ block — that is what `--push` is for.
 
 If you are about to tell a human to "remember" a procedural step, add a check instead.
 
+Each spoke has one too, generated from its `spoke.manifest` by
+`scripts/gen-spoke-hooks.sh` so a spoke's self-check and the hub's pre-export check cannot
+disagree. **Regenerate and `--push` after changing any `native_validator` line.**
+
+`core.hooksPath` is local git config, not a tracked file, so it does not survive a fresh
+clone. One command per clone, in the spoke:
+
+```bash
+git config core.hooksPath scripts/hooks
+```
+
 ## Things that have bitten before
 
 - **`platforms/codex/README.md` is validated by phrase matching.** Those checks are now

@@ -14,6 +14,7 @@ native_validator=sh plugins/sol-advisor/scripts/verify.sh
 
 [paths]
 .agents
+scripts
 plugins
 prompts
 skills
