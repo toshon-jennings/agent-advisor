@@ -90,7 +90,7 @@ jobs:
 WFHEAD
     sed -n 's/^native_validator=//p' "$manifest" | while IFS= read -r v; do
       case "$v" in
-        sh\ *)
+        sh\ *|bash\ *)
           printf '      - name: %s\n        run: %s\n' "$v" "$v"
           ;;
         *)

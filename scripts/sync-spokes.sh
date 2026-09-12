@@ -269,6 +269,32 @@ EOF
 
   # Guard 3 — the hub tree must pass the platform's own native validators before it
   # is allowed anywhere near the spoke.
+  # A bash script invoked with `sh` is undetectable on macOS, where /bin/sh IS bash, and
+  # fails on Linux, where it is dash. CI caught exactly this; a local run never could.
+  # Checking the declared interpreter against the script's shebang catches it anywhere.
+  local vline script shebang
+  while IFS= read -r vline; do
+    case "$vline" in
+      "sh "*)
+        script=${vline#sh }
+        script=${script%% *}
+        if [ -f "$hub_tree/$script" ]; then
+          shebang=$(head -1 "$hub_tree/$script")
+          case "$shebang" in
+            *bash*)
+              bad "$platform: manifest runs '$script' with sh, but its shebang is '$shebang'."
+              printf "           /bin/sh is bash on macOS and dash on Linux, so this passes\n" >&2
+              printf "           locally and fails in CI. Declare it as 'bash %s'.\n" "$script" >&2
+              escalate 3; return 1
+              ;;
+          esac
+        fi
+        ;;
+    esac
+  done <<EOF
+$(manifest_validators "$manifest")
+EOF
+
   note "  validating hub tree:"
   if ! run_validators "$hub_tree" "$manifest" hub; then
     bad "$platform: hub tree fails its native validator; nothing was touched"

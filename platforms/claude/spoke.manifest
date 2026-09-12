@@ -10,7 +10,7 @@ spoke_remote=https://github.com/toshon-jennings/claude-advisor.git
 
 # Run from the tree root, in order. The first is the repo's own structural checker;
 # the second is the harness-native marketplace/plugin manifest check.
-native_validator=sh scripts/verify.sh
+native_validator=bash scripts/verify.sh
 native_validator=claude plugin validate .
 
 [paths]

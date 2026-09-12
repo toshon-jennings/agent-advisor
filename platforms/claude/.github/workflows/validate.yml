@@ -20,6 +20,6 @@ jobs:
         run: |
           echo "Running this repository's own native validators."
           echo "CLI-dependent validators are skipped here; see the hub's gen-spoke-checks.sh."
-      - name: sh scripts/verify.sh
-        run: sh scripts/verify.sh
+      - name: bash scripts/verify.sh
+        run: bash scripts/verify.sh
       # skipped in CI (needs a CLI that cannot be installed on a runner): claude plugin validate .

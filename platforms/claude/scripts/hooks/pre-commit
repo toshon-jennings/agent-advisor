@@ -21,7 +21,7 @@ run() {
   fi
 }
 
-run 'sh scripts/verify.sh'
+run 'bash scripts/verify.sh'
 run 'claude plugin validate .'
 
 if [ "$status" -ne 0 ]; then

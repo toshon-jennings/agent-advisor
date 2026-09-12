@@ -28,11 +28,11 @@ jobs:
 
       - name: claude — native validator
         working-directory: platforms/claude
-        run: sh scripts/verify.sh
+        run: bash scripts/verify.sh
 
       - name: antigravity — native validator
         working-directory: platforms/antigravity
-        run: sh scripts/verify.sh
+        run: bash scripts/verify.sh
 
       - name: shell syntax
         run: |
