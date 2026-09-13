@@ -541,7 +541,11 @@ for path in paths:
 print("obsolete workflow references are absent")
 PY
 
-has 'Sol / High runs the show' || fail "README omits primary ownership"
+# Checks the ownership *rule*, not one chair's name. The earlier phrasing pinned the
+# sentence to Sol, which this repo made false the moment it shipped the Astra and
+# Daybreak chair aliases — and because the check enforced the wording, it held the
+# false sentence in place.
+has 'The primary orchestrator runs the show' || fail "README omits primary ownership"
 # The upstream README carried a first-person pitch for the author's newsletter
 # ("I write Attention Heads... Subscribe to get new posts to your inbox"). The checks
 # that enforced it are removed here, and deliberately: in a fork maintained by someone

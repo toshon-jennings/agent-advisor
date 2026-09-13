@@ -90,6 +90,15 @@ for path in sorted(glob.glob(os.path.join(agents_dir, "*.md"))):
         errors.append(f"{rel}: name {frontmatter['name']!r} != filename stem {stem!r}")
     if frontmatter.get("model") and frontmatter["model"] not in allowed_models:
         errors.append(f"{rel}: model {frontmatter['model']!r} not in {sorted(allowed_models)}")
+    # `inherit` resolves to the calling agent's model, so a reviewer pinned to it is the
+    # chair reviewing itself — context-clean and nothing more, while the acceptance still
+    # reports an independent review. The allowlist above permits `inherit` because an
+    # implementer may legitimately use it; a reviewer never may.
+    if stem.endswith("reviewer") and frontmatter.get("model") == "inherit":
+        errors.append(
+            f"{rel}: a reviewer may not be pinned to 'inherit' — it resolves to the "
+            f"chair's own model, which carries no independence"
+        )
 
 print("; ".join(errors))
 PY

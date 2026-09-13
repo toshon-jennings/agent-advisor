@@ -29,9 +29,17 @@ Before the first task tool call, emit one machine-auditable declaration:
 
 ~~~text
 SELECTIVE ROUTE
+orchestrator: <the model holding the primary session, with its effort>
 mode: solo | delegate | audit | full
+review: <the review lane, or `none` when the mode includes no review>
 risk: <concise, task-specific rationale>
 ~~~
+
+`orchestrator:` and `review:` are recorded because the acceptance claim depends on them.
+"A fresh reviewer checked this" means something different under a Sol chair than under an
+Astra one — with a Sol chair, `sol_advisor_sol_reviewer` is the same model family and the
+review is context-clean, not cross-model. A transcript that omits the chair cannot be
+audited for that afterwards, and the distinction is invisible in the result.
 
 No task tool call may precede this declaration. Choose `solo` unless a stated risk
 justifies another mode. A later declaration may only escalate the route when newly

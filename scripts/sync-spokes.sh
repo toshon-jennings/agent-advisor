@@ -247,6 +247,26 @@ preflight_platform() {
   if ! git -C "$spoke" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     bad "$platform: spoke is not a git work tree: $spoke"; escalate 3; return 1
   fi
+  # --is-inside-work-tree is true for every subdirectory, so on its own it proves only
+  # that the manifest points somewhere inside *a* repository. A spoke_path naming a
+  # subdirectory would pass it, pass the origin check below, and then have every managed
+  # path written relative to that subdirectory — a correct-looking push into the wrong
+  # place. Require the path to be the repository's own root.
+  local spoke_top spoke_phys
+  spoke_top=$(git -C "$spoke" rev-parse --show-toplevel 2>/dev/null) || {
+    bad "$platform: could not resolve the spoke's repository root: $spoke"
+    escalate 3; return 1; }
+  spoke_phys=$(CDPATH= cd -- "$spoke" 2>/dev/null && pwd -P) || {
+    bad "$platform: could not resolve the spoke path: $spoke"; escalate 3; return 1; }
+  spoke_top=$(CDPATH= cd -- "$spoke_top" 2>/dev/null && pwd -P) || {
+    bad "$platform: could not resolve the spoke's repository root: $spoke"
+    escalate 3; return 1; }
+  if [ "$spoke_phys" != "$spoke_top" ]; then
+    bad "$platform: spoke_path is not the repository root"
+    bad "         manifest: $spoke_phys"
+    bad "         root:     $spoke_top"
+    escalate 3; return 1
+  fi
   local actual_remote grc
   actual_remote=$(git -C "$spoke" remote get-url origin 2>/dev/null); grc=$?
   if [ "$grc" -ne 0 ]; then
@@ -638,17 +658,30 @@ done
 # something; a read-only mode that quietly reconfigures the repository it is inspecting is
 # exactly the kind of surprise the rest of this script exists to prevent. In check mode we
 # say so and let the caller decide.
+#
+# It is also deferred until a push has actually passed preflight. Setting it here would
+# mean a --push that is then refused — a dirty spoke, an unmatched --platform, a bad
+# manifest — had already modified .git/config while the summary said "nothing was
+# written anywhere". The hook is a convenience; the truthfulness of that line is not.
+hub_hook_pending=0
 if git -C "$hub_root" rev-parse --is-inside-work-tree >/dev/null 2>&1 &&
    [ -x "$hub_root/scripts/hooks/pre-commit" ] &&
    [ "$(git -C "$hub_root" config core.hooksPath 2>/dev/null)" != "scripts/hooks" ]; then
   if [ "$mode" = push ]; then
-    git -C "$hub_root" config core.hooksPath scripts/hooks &&
-      note "enabled the hub's pre-commit hook (core.hooksPath=scripts/hooks)"
+    hub_hook_pending=1
   else
     note "note: the hub's pre-commit hook is not enabled."
     note "      run: git config core.hooksPath scripts/hooks   (or any --push does it)"
   fi
 fi
+
+# Called only once a push has passed preflight and is about to write.
+enable_hub_hook() {
+  [ "$hub_hook_pending" -eq 1 ] || return 0
+  hub_hook_pending=0
+  git -C "$hub_root" config core.hooksPath scripts/hooks &&
+    note "enabled the hub's pre-commit hook (core.hooksPath=scripts/hooks)"
+}
 
 scratch=$(mktemp -d) || { printf 'ERROR: could not create a temp dir\n' >&2; exit 4; }
 trap 'rm -rf "$scratch"' EXIT
@@ -695,6 +728,7 @@ if [ "$mode" = push ]; then
       note "HALTED: a platform failed re-validation just before the first write, so"
       note "        nothing was written anywhere."
     else
+      enable_hub_hook
       for platform in "${ready[@]}"; do
         apply_platform "$platform" || true
       done

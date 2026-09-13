@@ -65,7 +65,9 @@ $daybreak-advisor: Build this feature and verify it.
 | `audit` | Independent final scrutiny matters most. | Root implements; a fresh read-only Sol / High reviews. |
 | `full` | Explicit broad or high-risk exception. | One implementer, root verification, and a fresh Sol / High review. |
 
-Sol / High runs the show: it owns architecture, verification, escalation, and acceptance.
+The primary orchestrator runs the show: it owns architecture, verification, escalation, and
+acceptance. That chair is Sol / High by default, and Astra / High or Daybreak / High when
+invoked through those aliases; the ownership is the chair's, whichever model holds it.
 Solo is the default. One auxiliary is the default maximum. Auxiliary work substitutes for
 primary work rather than duplicating it. The primary orchestrator declares a
 `SELECTIVE ROUTE` before the first task tool call, may escalate only when newly observed

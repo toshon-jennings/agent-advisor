@@ -59,6 +59,27 @@ if ! mkdir -p "$out_dir" 2>/dev/null; then
   printf 'codex-review: cannot create out-dir: %s\n' "$out_dir" >&2
   exit 6
 fi
+
+# "Nothing is ever written into the reviewed repository" is a claim this script has to
+# prove, not assume. mkdir -p will happily create the out-dir *inside* repo_root, and
+# every output write below would then mutate the tree under review — the one thing the
+# neutral working directory exists to prevent. Compare resolved physical paths, because
+# a symlinked out-dir pointing into the repo would pass a textual comparison.
+repo_abs=$(cd -- "$repo_root" && pwd -P) || {
+  printf 'codex-review: cannot resolve repo root: %s\n' "$repo_root" >&2; exit 6; }
+out_abs=$(cd -- "$out_dir" && pwd -P) || {
+  printf 'codex-review: cannot resolve out-dir: %s\n' "$out_dir" >&2; exit 6; }
+if [ "$out_abs" = "$repo_abs" ]; then
+  printf 'codex-review: out-dir is the reviewed repository: %s\n' "$out_abs" >&2
+  exit 6
+fi
+case "$out_abs/" in
+  "$repo_abs"/*)
+    printf 'codex-review: out-dir %s is inside the reviewed repo %s\n' \
+      "$out_abs" "$repo_abs" >&2
+    exit 6
+    ;;
+esac
 # mkdir -p succeeds on a directory that already exists and is unwritable, so prove
 # writability rather than inferring it. Every later write is guarded too: an output
 # failure is caller error, and must never surface as the lane being unavailable.
@@ -74,9 +95,8 @@ if ! command -v codex >/dev/null 2>&1; then
   exit 2
 fi
 
-# Neutral working directory. Nothing is ever written into the reviewed repository, and
-# nothing in it is read as instructions.
-repo_abs=$(cd -- "$repo_root" && pwd -P)
+# Neutral working directory. Nothing is ever written into the reviewed repository (proved
+# for the out-dir above), and nothing in it is read as instructions.
 # An explicit absolute template, because mktemp -d honours TMPDIR and a TMPDIR pointing
 # inside the reviewed repository would put the "neutral" directory under it — handing
 # back the ancestor .codex config, hooks and skills this whole arrangement removes.
@@ -116,7 +136,27 @@ for f in "$verdict" "$transcript" "$header" "$block_file" "$run_prompt"; do
   fi
 done
 
+# `: >"$f"` follows a symlink and truncates its target, and truncates a hard link's
+# shared inode — either would destroy a file outside this out-dir that the caller never
+# named. Refuse rather than unlink: an output path that is already a link is a sign the
+# caller got the out-dir wrong, and silently removing what is there would hide that.
 for f in "$verdict" "$transcript" "$header" "$block_file" "$run_prompt"; do
+  if [ -L "$f" ]; then
+    printf 'codex-review: output path is a symlink, refusing to follow it: %s\n' "$f" >&2
+    exit 6
+  fi
+  if [ -e "$f" ] && [ ! -f "$f" ]; then
+    printf 'codex-review: output path exists and is not a regular file: %s\n' "$f" >&2
+    exit 6
+  fi
+  if [ -f "$f" ]; then
+    links=$(stat -f %l "$f" 2>/dev/null || stat -c %h "$f" 2>/dev/null || echo 1)
+    if [ "$links" -gt 1 ] 2>/dev/null; then
+      printf 'codex-review: output path is hard-linked (%s links), refusing: %s\n' \
+        "$links" "$f" >&2
+      exit 6
+    fi
+  fi
   if ! : >"$f" 2>/dev/null; then
     printf 'codex-review: cannot write output file: %s\n' "$f" >&2
     exit 6
@@ -222,6 +262,21 @@ case "$got_verdict" in
     exit 5
     ;;
 esac
+
+# The rubric couples the verdict to its fields: a `fix-first` with no findings names no
+# correction to make, so it is malformed rather than merely unhelpful. Checking each
+# field for *a* value is not enough to catch it — "none" is a value.
+if [ "$got_verdict" = fix-first ]; then
+  got_findings=$(sed -n 's/^FINDINGS:[[:space:]]*//p' "$block_file" | head -1 |
+    sed 's/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')
+  case "$got_findings" in
+    none|none.|n/a|"")
+      printf 'codex-review: MALFORMED - fix-first with FINDINGS: %s names no correction\n' \
+        "${got_findings:-empty}" >&2
+      exit 5
+      ;;
+  esac
+fi
 
 printf 'codex-review: ok - verdict=%s\n' "$got_verdict"
 printf 'codex-review: observed model=%s sandbox=%s effort=%s (all three verified against the pin)\n' \

@@ -44,10 +44,21 @@ Platform variants carry additional fields where the harness makes them meaningfu
 | `chair` | as `orchestrator` | `chair` | `orchestrator` |
 | `floor` | implicit (`solo`) | `floor` | implicit per tier |
 | `mode` | yes | yes | yes |
-| `review` | implicit (single lane) | `review` | implicit per tier |
+| `review` | yes | `review` | inside `lanes` |
 | `risk` | yes | yes | yes |
 | `advisor` / `tier` | — | — | yes |
 | `lanes` | — | — | yes |
+
+`floor` is the one field a harness may leave implicit, and only where the tier fixes it:
+Codex has a single floor, and each Antigravity tier declares its own, so writing it into
+every declaration would restate a constant.
+
+**The other four are not optional**, though a harness may carry one inside a field that
+subsumes it — Antigravity's `lanes:` names every subagent lane *and* its model, so the
+review lane is recorded there rather than twice. That satisfies "it adds, it never
+removes"; dropping the information entirely does not. `chair` and `review` are the two
+that make an acceptance auditable after the fact: a claim about review independence cannot
+be checked against a transcript that never recorded which model held the chair.
 | `failover` | — | on failover only | yes |
 
 ## The four modes

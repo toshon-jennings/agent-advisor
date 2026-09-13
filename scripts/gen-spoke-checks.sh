@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
 # Generate each platform's pre-commit hook AND CI workflow from its spoke.manifest.
 #
-# Both run exactly the native validators the manifest declares, so the check a spoke runs
-# on itself, the check CI runs, and the check the hub runs before exporting cannot
-# disagree. Re-run this after changing any native_validator line, then --push.
+# The hook runs exactly the native validators the manifest declares. CI runs the subset of
+# them that a runner can execute: the `sh ...` and `bash ...` entries, which are the repos'
+# own portable checkers. Validators that shell out to a proprietary CLI (`claude plugin
+# validate`, `agy plugin validate`) cannot be installed on a runner and are skipped there,
+# with a comment naming each one in the generated workflow.
 #
-# The hook is a fast local convenience and depends on `git config core.hooksPath`, which
-# does not survive a fresh clone. CI is the guarantee that does not depend on any local
-# state: a clone with no hooks configured still cannot land a broken tree unnoticed.
-#
-# CI runs only the `sh ...` validators — the repo's own portable checkers. Validators that
-# shell out to a proprietary CLI (`claude plugin validate`, `agy plugin validate`) are not
-# installable on a runner, so they stay local and pre-commit only. That is stated in the
-# generated workflow rather than papered over.
+# So the two are not identical, and the difference is the point rather than an oversight:
+# the hook is the full check and depends on `git config core.hooksPath`, which does not
+# survive a fresh clone; CI is the portable subset and depends on no local state at all.
+# A clone with no hooks configured still cannot land a tree that fails a portable checker.
+# Re-run this after changing any native_validator line, then --push.
 
 set -uo pipefail
 hub_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)

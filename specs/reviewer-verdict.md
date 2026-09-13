@@ -25,12 +25,13 @@ unprompted when a failover made it weaker than the one declared.
 ## Read-only is a property, not a request
 
 A reviewer that *could* implement its own fix will eventually implement one, and the
-verdict then describes a change set the orchestrator never inspected. Every harness here
-enforces read-only structurally rather than by instruction:
+verdict then describes a change set the orchestrator never inspected. Three of the four
+lanes below enforce read-only structurally rather than by instruction; the in-process
+Codex lane enforces it structurally only while the host honours the profile.
 
 | Harness | Enforcement mechanism | What it actually blocks |
 |---|---|---|
-| Codex | `sandbox_mode = "read-only"` in the agent profile | **Writes to the filesystem.** Commands still run — the sandbox denies the write, not the execution |
+| Codex | `sandbox_mode = "read-only"` in the agent profile — **conditional**: the host policy can broaden it, and the workflow permits proceeding when it does, on prose plus before-and-after state capture | **Writes to the filesystem**, while the sandbox is in force. Commands still run — the sandbox denies the write, not the execution |
 | Claude Code | agent frontmatter `tools:` lists read tools only — no write tools, no Bash | Writes **and** command execution: with no Bash tool there is nothing to run commands with |
 | Antigravity | agent frontmatter `tools:` lists read tools only | Writes and command execution, for the same reason |
 | Out-of-process (Codex CLI) | the CLI's own read-only sandbox, verified in the run header | Writes; commands still run |

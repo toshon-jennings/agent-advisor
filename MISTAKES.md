@@ -3,6 +3,47 @@
 Newest first. Format: **What happened | Root cause | Consequence | The rule that prevents
 repeat**.
 
+## 2026-09-13 — A validator held a false sentence in place
+
+**What happened:** `platforms/codex/README.md` asserted "Sol / High runs the show", and
+`plugins/sol-advisor/scripts/verify.sh` enforced that exact string. The repo ships three
+chair aliases — Sol, Astra, Daybreak — so the sentence is false under two of them. Round 8
+found it; seven prior rounds did not.
+
+**Root cause:** the check grepped for a **specific chair's name** when the rule it meant to
+protect was **that some chair owns architecture, verification, escalation and acceptance**.
+Once a capability was added that the sentence did not cover, the validator stopped
+protecting the rule and started protecting the error — and made correcting it a two-file
+change, which is exactly the friction that leaves such sentences in place.
+
+**Consequence:** a false ownership claim shipped in a public README and survived seven
+cross-vendor review rounds, guarded by a check that made it look deliberate.
+
+**The rule:** a phrase-matching check must grep the **invariant**, never an instance of it.
+Before adding one, ask what the repo would have to do for the phrase to become false
+without the rule becoming false — if there is such a change, match something more general.
+This is the same failure as pinning a version string in prose, and the same fix.
+
+## 2026-09-13 — Documentation claimed a lane the runtime rejects
+
+**What happened:** `gem-advisor-max/SKILL.md` named `Claude Opus` as the preferred reviewer
+under a Gemini chair. Antigravity cannot spawn a non-Gemini subagent at all: the CLI itself
+answers `unsupported model: must be one of 'inherit', 'flash', 'pro', 'flash_lite'`. The
+same file said so correctly two paragraphs later.
+
+**Root cause:** the capability was never checked against the tool, only reasoned about from
+our own documents. `agy plugin validate` does **not** validate model values — it accepts
+`model: totally-not-a-real-model` and exits 0 — so the native validator gave false comfort
+and the failure would only have appeared at spawn time.
+
+**Consequence:** a documented review tier that could not be invoked, carried across eight
+rounds as "intent" rather than being resolved.
+
+**The rule:** settle a capability question against the **runtime**, not against the
+project's own prose or a validator that may not check the field. `strings` on the binary,
+or an actual spawn, beats any amount of internal consistency. And never treat a validator's
+silence as confirmation without proving it would have objected to a wrong value.
+
 ## 2026-09-12 — Assumed a repo-local script was executable
 
 **What happened:** the first attempt to run the Codex spoke's native validator from the

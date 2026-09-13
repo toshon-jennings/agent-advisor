@@ -57,11 +57,14 @@ clone. **You should never have to set it by hand** — three things do it for yo
   something — it prints the one-line command instead.
 - `install.sh` sets it in the Codex and Antigravity spokes.
 - **CI is the backstop that needs no local state at all.** Every repo has a `validate`
-  workflow running the same native validators on push and pull request, so a clone with
-  no hook configured still cannot land a broken tree unnoticed.
+  workflow running the *portable* native validators — the `sh`/`bash` ones — on push and
+  pull request, so a clone with no hook configured still cannot land a tree that fails
+  one. `claude plugin validate` and `agy plugin validate` cannot be installed on a runner
+  and stay local to the hook and to `--push`.
 
-The hook is a speed optimisation — it fails in two seconds instead of sixty. CI is the
-guarantee. If you ever find yourself writing "remember to…", that is the signal to add a
+The hook is a speed optimisation — it fails in two seconds instead of sixty — and it is
+also the only place the proprietary validators run automatically. CI is the guarantee for
+everything a runner can execute. If you ever find yourself writing "remember to…", that is the signal to add a
 layer here instead.
 
 `.github/workflows/validate.yml` is generated too, so a manifest edited without

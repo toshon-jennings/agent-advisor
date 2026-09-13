@@ -116,10 +116,19 @@ Spawn using Antigravity's subagent facility. If invoking pre-registered agents:
 invoke_subagent:
   TypeName: gem-implementer-bounded | gem-implementer-complex | gem-reviewer
   Role: <3-5 word task label>
-  Model: flash | pro | inherit
   Workspace: inherit
   Prompt: <the complete five-part packet or review packet below>
 ~~~
+
+**Do not pass `Model:`.** The agent definition pins the lane's model, `Model:` overrides
+that pin, and the override is invisible in the result — so a `gem-reviewer` pinned to
+`pro` spawned as `Model: inherit` reviews on the chair's own model while the transcript
+still reports a fresh review. `inherit` is the field's default, which is what makes this
+the easy mistake rather than the exotic one.
+
+The single exception is a **declared** failover, where naming a different model is the
+whole point. It is legitimate only when it appears in the `REVIEW FAILOVER` block with
+the independence it actually carries, never as a quiet argument on an ordinary spawn.
 
 If dynamically defining subagents via `define_subagent`, set:
 - implementers: `enable_write_tools: true`, `enable_subagent_tools: false`, `enable_mcp_tools: false`

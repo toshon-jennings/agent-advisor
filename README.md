@@ -123,7 +123,7 @@ as a claim worth the extra machinery rather than a nice-to-have.
 
 | Property | Codex | Claude Code | Antigravity |
 |---|---|---|---|
-| Reviewer cannot write | **Structural** — `sandbox_mode = "read-only"` in the agent profile | **Structural** — frontmatter `tools:` lists read tools only; no write tools, no Bash | **Structural** — frontmatter `tools:` lists read tools only |
+| Reviewer cannot write | **Structural, if the host honours it** — `sandbox_mode = "read-only"` in the agent profile, but the host policy can broaden it and the workflow permits proceeding when it does | **Structural** — frontmatter `tools:` lists read tools only; no write tools, no Bash | **Structural** — frontmatter `tools:` lists read tools only |
 | Implementer cannot delegate onward | **Advisory** — the profile carries no such field; the restriction lives in `developer_instructions` prose | **Structural** — frontmatter `tools:` omits the `Agent` tool | **Structural** — frontmatter `tools:` omits every subagent tool |
 | Where the rule lives | A TOML field (reviewer) · prose (implementers) | The absence of a name in a list | The absence of a name in a list |
 | Failure mode if violated | Sandbox denies the write · nothing denies onward delegation | The tool is not callable | The tool is not callable |
@@ -142,9 +142,18 @@ own documentation is wrong on both:
   does not name those tools — which *is* structural, just not for the reason the files
   claim.
 
-So the honest summary is: read-only review is structurally enforced in all three; the
-one-auxiliary maximum is structurally enforced in two of three, and rests on instructions
-in Codex.
+So the honest summary is: read-only review is structurally enforced in Claude and
+Antigravity, and *conditionally* in Codex; the one-auxiliary maximum is structurally
+enforced in two of three, and rests on instructions in Codex.
+
+The Codex qualifier is not pedantry. `sandbox_mode = "read-only"` is a real field and a
+real sandbox, but the workflow it ships with
+(`platforms/codex/plugins/sol-advisor/skills/orchestration/references/role-contracts.md`)
+tells the orchestrator to use *observed* isolation, and permits continuing under a
+broadened host policy provided the prompt forbids edits and before-and-after state is
+captured. That is a reasonable operational rule, and it is not a structural guarantee —
+under it, "the reviewer could not write" is enforced by prose plus an after-the-fact
+check, exactly like the Codex implementers' delegation limit.
 
 The Claude and Antigravity mechanism is the quietest and therefore the easiest to break by
 accident: it is an *omission*, so adding a tool to the frontmatter for an unrelated reason

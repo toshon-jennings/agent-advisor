@@ -70,12 +70,22 @@ observed risk justifies it, with the evidence recorded. Never silently downgrade
 
 ## Cross-model review and quota-aware failover
 
-At this tier, cross-model review provides rigorous independent scrutiny. The preferred
-reviewer configuration depends on the primary chair:
-- If the primary orchestrator is Gemini Pro 3.1 (High), the preferred reviewer is
-  `Claude Opus` (or `Claude Sonnet`) for true cross-model validation.
-- If the primary orchestrator is Claude Opus, the preferred reviewer is `Gemini Pro 3.1`
-  for true cross-model validation.
+At this tier, cross-model review provides rigorous independent scrutiny. **Every subagent
+this plugin can spawn runs a Gemini model** — the CLI itself rejects anything else
+(`unsupported model: must be one of 'inherit', 'flash', 'pro', 'flash_lite'`), which is
+what `scripts/verify.sh` mirrors. Claude is a *chair* option here, never a reviewer lane.
+
+So the independence a review can carry is decided by the chair, not by picking a better
+reviewer:
+
+| Chair | Best reachable reviewer | Independence |
+|---|---|---|
+| Claude Opus | `pro`, or `flash` | cross-vendor |
+| Gemini Pro 3.1 (High) | `flash` | cross-model, same vendor |
+
+If the work needs cross-vendor review, that is a reason to run the chair on Claude Opus
+before starting — not something to arrange later by naming a reviewer the CLI will refuse
+to spawn.
 
 ### Quota failover rule
 
@@ -87,31 +97,24 @@ as the review stays as independent as the one declared.
 independent lane changes nothing the acceptance claims, so it needs no permission. Failing
 over to a weaker one changes exactly what the acceptance claims, so it is the user's call.
 
-If Claude is selected for review and hits rate limits (429), quota exhaustion, or credit
-depletion:
+Because Claude can only ever be the *chair* here, quota exhaustion does not kill the
+reviewer — it kills the chair, and it takes the run's cross-vendor tier with it. The
+session falls back to a Gemini chair, and every Gemini reviewer beneath a Gemini chair is
+same-vendor at best. When that happens:
 
-1. Log the failover in the selective route audit trail, naming both lanes and the realized
-   independence:
-   `failover: Claude quota depleted -> gem-reviewer on flash (cross-model same-vendor; tier lowered)`
-2. **Establish whether a tier-preserving lane is actually reachable. Usually one is not.**
-   Every subagent lane in this plugin runs a Gemini model: `scripts/verify.sh` restricts
-   agent `model:` to `flash`, `flash_lite`, `pro`, `inherit`, and the spawn contract
-   accepts `flash | pro | inherit`. There is no invocable cross-vendor reviewer, so a
-   Claude reviewer that dies has **no equally independent replacement**, and every
-   available substitute lowers the tier. Do not name a lane the definitions do not
-   provide.
-3. **Never fail over to a model the chair is running.** Under a Gemini Pro 3.1 chair,
-   `gem-reviewer` on `Gemini Pro 3.1` is context-clean and nothing more — the reviewer and
-   the orchestrator are the same model. That is not a weaker review of the same kind; it is
-   the removal of independent review while the transcript still says a review happened.
-   Refuse it as a failover target.
-4. **Because the only reachable lanes are weaker, stop and ask.** Under the current agent
-   definitions this is the normal path, not the exception: `gem-reviewer` on `flash` under
-   a Pro chair is cross-model same-vendor, which is genuinely lower than the Claude review
-   that was declared. Say plainly that the review will be weaker, name both lanes, offer
-   the repair if one exists, and wait for the user. Stalling is correct here because the
-   alternative is reporting an independence the run did not have.
-5. State the realized independence in the acceptance report — cross-vendor, cross-model
+1. Log it in the selective route audit trail, naming what the tier actually became:
+   `failover: Claude chair quota depleted -> Gemini Pro chair, gem-reviewer on flash
+   (cross-model same-vendor; tier lowered)`
+2. **Never review with the model the chair is running.** Under a Gemini Pro 3.1 chair,
+   `gem-reviewer` on `pro` — or on `inherit`, which resolves to the same thing — is
+   context-clean and nothing more. That is not a weaker review of the same kind; it is the
+   removal of independent review while the transcript still says a review happened. Use
+   `flash`, or stop. `scripts/verify.sh` refuses a reviewer pinned to `inherit` outright.
+3. **The tier dropped, so stop and ask.** There is no tier-preserving move available: the
+   only way back to cross-vendor is a Claude chair, which is the thing that just became
+   unavailable. Say plainly that the review will be weaker, name what was declared and
+   what is now reachable, offer the repair if one exists, and wait for the user.
+4. State the realized independence in the acceptance report — cross-vendor, cross-model
    same-vendor, or context-clean only. Never describe a failover review as "clean
    fresh-context review" without saying which tier it actually carried.
 
