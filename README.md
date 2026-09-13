@@ -96,7 +96,7 @@ it as "clean fresh-context review." See
 | | **Codex** — Sol Advisor | **Claude Code** — Claude Advisor | **Antigravity** — Gem Advisor |
 |---|---|---|---|
 | Spoke | `~/sol-advisor-portable` | `~/claude-advisor` | `~/gem-advisor` |
-| Plugin version | 0.6.0 (portable fork 2.0.0) | 0.3.0 | 0.1.0 |
+| Plugin version | 0.6.0 (portable fork 2.0.1) | 0.3.1 | 0.1.1 |
 | Chairs | Sol / High (`gpt-5.6-sol`), Astra / High (`gpt-6-astra`), Daybreak Blue / High | Opus 5 (`claude-opus-5`), Fable 5.1 (`claude-fable-5-1`) | everyday (Gemini Pro 3.1 / Flash 3.8), max (Gemini Pro 3.1 High or Claude Opus) |
 | How chairs vary | Thin alias skills applying **one** substitution: the primary model. Every auxiliary lane stays pinned. | Chair skills set exactly two values: which model presides, and how low its route may go. | Two **tiers**, differing in chair, route floor, and acceptance bar. |
 | Route floor | `solo` | `solo` (Opus) · `audit` (Fable) | `solo` (everyday) · independent review is the norm (max) |
@@ -286,8 +286,13 @@ either.
 | Platform | Validators run from the tree root |
 |---|---|
 | Codex | `sh plugins/sol-advisor/scripts/verify.sh` |
-| Claude Code | `sh scripts/verify.sh`, then `claude plugin validate .` |
-| Antigravity | `sh scripts/verify.sh`, then `agy plugin validate .` |
+| Claude Code | `bash scripts/verify.sh`, then `claude plugin validate .` |
+| Antigravity | `bash scripts/verify.sh`, then `agy plugin validate .` |
+
+Two of the three are invoked with `bash` rather than `sh` because they use `set -o
+pipefail`, which is not POSIX. `/bin/sh` is bash on macOS and dash on Ubuntu, so `sh` here
+passes locally and fails in CI — `sync-spokes.sh` refuses a manifest that declares `sh` for
+a script whose shebang names bash, for exactly that reason.
 
 The Codex CLI ships no `plugin validate` subcommand, so the repo's own agent-profile
 checker is the native validator there — it is not a lesser check, but it is a different

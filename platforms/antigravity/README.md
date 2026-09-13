@@ -43,16 +43,19 @@ Both tiers share four exact modes, and at most one auxiliary subagent by default
 | `gem-reviewer` | `Gemini Pro 3.1` | `Claude Opus` | **Strictly read-only**, no bash, no agent tools |
 
 ### Enforced Isolation
-- **No recursive delegation**: Workers cannot spawn further subagents (`enable_subagent_tools: false`), guaranteeing that the single-auxiliary maximum cannot be broken.
-- **Enforced read-only reviewer**: The reviewer holds no write tools and cannot run shell commands (`enable_write_tools: false`). The orchestrator pastes the complete diff and execution evidence directly into the reviewer's prompt.
+- **No recursive delegation**: Workers cannot spawn further subagents — their frontmatter `tools:` list names no subagent tool, so the single-auxiliary maximum cannot be broken by a worker delegating onward.
+- **Enforced read-only reviewer**: The reviewer's frontmatter `tools:` list contains read tools only, so it cannot write and cannot run shell commands. The orchestrator pastes the complete diff and execution evidence directly into the reviewer's prompt.
+
+  (The agent bodies describe these as `enable_subagent_tools: false` and `enable_write_tools: false`. Those strings are prose in the instruction text, not frontmatter keys — the allowlist omission is what actually enforces both. The guarantee holds; the stated reason for it does not.)
 
 ## Multi-model quota management & failover
 
 Claude usage often runs out rapidly under heavy agentic tasks. Gem Advisor handles this cleanly:
 1. **Everyday Tier Protection**: Runs entirely on Gemini Flash 3.8 and Gemini Pro 3.1, eliminating quota anxiety and protecting Claude credits.
-2. **Graceful Failover on Exhaustion**: If Claude is selected for high-tier review and encounters rate limits (429) or credit exhaustion, the orchestrator logs a machine-auditable failover in the route declaration:
-   `failover: Claude quota depleted -> Gemini Pro 3.1 fresh-context review`
-   Delivery proceeds immediately without stalling or failing.
+2. **Failover on Exhaustion, gated by independence**: If Claude is selected for high-tier review and encounters rate limits (429) or credit exhaustion, the orchestrator logs a machine-auditable failover in the route declaration naming both lanes and the independence actually carried:
+   `failover: Claude quota depleted -> gem-reviewer on flash (cross-model same-vendor; tier lowered)`
+   An **implementer** lane fails over immediately — it carries no independence claim, so changing its model changes nothing the acceptance asserts. A **reviewer** lane does not: every subagent this plugin can spawn runs a Gemini model, so every reviewer failover lowers the independence the review was declared to have, and lowering it is the user's decision rather than the orchestrator's. It stops and asks.
+   A failover onto the model the chair is running is refused outright — reviewer and orchestrator being the same model is the absence of independent review, not a weaker form of it.
 
 ## Installation
 

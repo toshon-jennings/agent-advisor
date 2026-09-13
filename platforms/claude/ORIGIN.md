@@ -20,7 +20,7 @@ Measured at the sentence level, against the current text of both files:
 
 | Measure | Count | Share |
 |---|---|---|
-| Sentences in this project's workflow | 147 | — |
+| Sentences in this project's workflow | 151 | — |
 | Sentences in the Codex original | 49 | — |
 | This project's sentences ≥70% similar to one in the original | 22 | **15%** |
 | The original's sentences with a ≥70% match here | 22 | **45%** |
@@ -62,6 +62,10 @@ Rewriting "Treat worker reports as claims" into something longer and vaguer woul
 document worse while leaving the derivation exactly as real — it would remove the evidence,
 not the borrowing. The mode contracts in particular *should* read alike; wording that
 diverged there would be a defect, not originality.
+
+Re-measured after the failover-rule revision, which added four sentences to the workflow:
+the denominator moved 147 → 151 and every percentage rounds unchanged, because the added
+sentences are new work with no counterpart in the original. The figures below are current.
 
 Sentence-splitting is arbitrary, so a different method will produce different denominators.
 The figures above come from splitting on sentence boundaries after stripping frontmatter,

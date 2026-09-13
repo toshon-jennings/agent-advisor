@@ -92,25 +92,37 @@ depletion:
 
 1. Log the failover in the selective route audit trail, naming both lanes and the realized
    independence:
-   `failover: Claude quota depleted -> GPT-OSS fresh-context review (cross-vendor preserved)`
-2. **Prefer a lane that preserves the tier.** Under a Gemini chair, a Claude reviewer is
-   cross-vendor; `GPT-OSS` is also cross-vendor, so moving there preserves the claim.
-   Spawn it and continue without stalling.
+   `failover: Claude quota depleted -> gem-reviewer on flash (cross-model same-vendor; tier lowered)`
+2. **Establish whether a tier-preserving lane is actually reachable. Usually one is not.**
+   Every subagent lane in this plugin runs a Gemini model: `scripts/verify.sh` restricts
+   agent `model:` to `flash`, `flash_lite`, `pro`, `inherit`, and the spawn contract
+   accepts `flash | pro | inherit`. There is no invocable cross-vendor reviewer, so a
+   Claude reviewer that dies has **no equally independent replacement**, and every
+   available substitute lowers the tier. Do not name a lane the definitions do not
+   provide.
 3. **Never fail over to a model the chair is running.** Under a Gemini Pro 3.1 chair,
    `gem-reviewer` on `Gemini Pro 3.1` is context-clean and nothing more — the reviewer and
    the orchestrator are the same model. That is not a weaker review of the same kind; it is
    the removal of independent review while the transcript still says a review happened.
    Refuse it as a failover target.
-4. **If the only reachable lane is weaker, stop and ask.** Say plainly that the review will
-   be weaker than the one declared, name both lanes, and offer the repair if one exists.
-   Wait for the user. This is the one case where stalling is correct, because the
+4. **Because the only reachable lanes are weaker, stop and ask.** Under the current agent
+   definitions this is the normal path, not the exception: `gem-reviewer` on `flash` under
+   a Pro chair is cross-model same-vendor, which is genuinely lower than the Claude review
+   that was declared. Say plainly that the review will be weaker, name both lanes, offer
+   the repair if one exists, and wait for the user. Stalling is correct here because the
    alternative is reporting an independence the run did not have.
 5. State the realized independence in the acceptance report — cross-vendor, cross-model
    same-vendor, or context-clean only. Never describe a failover review as "clean
    fresh-context review" without saying which tier it actually carried.
 
-**Never stall on quota exhaustion that a tier-preserving failover can absorb.** Do stall
-when continuing would silently downgrade the acceptance claim.
+**Never stall on quota exhaustion that a tier-preserving failover can absorb** — but note
+that with today's lanes there is no such failover for the reviewer, so in practice this
+tier asks. The rule is written for the capability, not the current roster: if a
+cross-vendor reviewer lane ever becomes invocable, it applies without amendment.
+
+For an **implementer** lane the calculus differs and the "never stall" instinct holds
+fully: an implementer carries no independence claim, so swapping its model changes nothing
+the acceptance asserts. Fail over immediately and declare it.
 
 ## Review contract
 

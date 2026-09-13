@@ -27,7 +27,7 @@
 |---|---|
 | Runtime | Google Antigravity (CLI `agy`, Desktop 2.0, IDE) |
 | Core Plugin Manifest | `plugin.json` |
-| Primary Models | Gemini Pro 3.1, Gemini Flash 3.8, Claude Opus, GPT-OSS |
+| Primary Models | Gemini Pro 3.1, Gemini Flash 3.8 (chair may also be Claude Opus at the max tier). Subagent lanes are restricted to `flash`, `flash_lite`, `pro`, `inherit` by `scripts/verify.sh`. |
 | Subagents | Antigravity Native Subagents (`invoke_subagent`, `define_subagent`) |
 | Installation & Checks | `agy plugin install`, `agy plugin validate` |
 
@@ -67,7 +67,7 @@
 1. **Selective Route Declaration**: Emits `SELECTIVE ROUTE` before any task tool calls.
 2. **Single Auxiliary Maximum**: Solo default; at most one auxiliary subagent permitted by default.
 3. **Zero Claude Burn on Everyday Tier**: Everyday tasks run entirely on Gemini Flash 3.8 and Gemini Pro 3.1.
-4. **Graceful Failover, gated by independence tier**: If Claude hits 429 or quota limits, fall back automatically to a lane that preserves the declared independence (`GPT-OSS` under a Gemini chair). A fallback that would lower the tier needs user authorization; one running the chair's own model is refused outright.
+4. **Graceful Failover, gated by independence tier**: If Claude hits 429 or quota limits, an implementer lane fails over immediately (it carries no independence claim). A reviewer lane may not: every invocable subagent runs a Gemini model, so every reviewer failover lowers the tier and needs user authorization. A fallback running the chair's own model is refused outright.
 5. **Enforced Boundary Discipline**: Implementers have write tools but cannot spawn subagents; reviewer is strictly read-only with no bash.
 
 ---

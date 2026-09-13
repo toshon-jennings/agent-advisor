@@ -120,3 +120,44 @@ fixed while the hole stayed open, which is worse than never having addressed it.
 input is replayed and observed to fail safely. And in shell specifically: NUL-delimited
 data must go through a file or a pipe, never through `$(...)` — command substitution is a
 text channel and quietly truncates at the first NUL boundary.
+
+## 2026-09-12 — Reported a fix as complete after grepping for the wrong strings
+
+**What happened:** I resolved the Antigravity failover conflict, grepped for the old policy
+across the platform tree, fixed every hit, and told the user it was "fixed across all seven
+files that carried the old policy." The sixth review found the spoke's own `README.md` still
+instructing the exact unsafe failover.
+
+**Root cause:** I searched for the phrasings I had already seen — `failing over to Gemini
+Pro`, `fallback to Gemini Pro` — rather than for the concept. The README words it
+`-> Gemini Pro 3.1 fresh-context review`, which matches none of them. My completeness claim
+rested on a grep whose patterns were derived from the files I had already found.
+
+**Consequence:** a public README kept telling readers to do the unsafe thing, and I told the
+user the opposite. The claim was wrong, not just the work.
+
+**The rule:** a grep proves what it matched, never what it missed. Before claiming a sweep
+is complete, search for the *subject* (`failover`, `quota`, the target's name) and read
+every hit, or enumerate the file set independently. And do not put a count in a completion
+claim — "all seven files" asserted a total I had never actually established.
+
+## 2026-09-12 — Prescribed a lane that cannot be invoked
+
+**What happened:** the failover rule I wrote told Antigravity to fail over to `GPT-OSS` to
+preserve cross-vendor independence. No such lane exists. `scripts/verify.sh` restricts agent
+models to `{flash, flash_lite, pro, inherit}` and the spawn contract accepts
+`flash | pro | inherit` — every invocable subagent runs Gemini.
+
+**Root cause:** `GPT-OSS` appeared in a documentation table as a "failover model", and I
+treated a table entry as evidence of capability without checking whether anything could
+spawn it. Identical in shape to claiming `verify.sh` contained a check it did not: reading a
+description and repeating it instead of verifying the mechanism.
+
+**Consequence:** the resolution's practical conclusion was backwards. I reported that
+Antigravity "usually does not ask"; in reality no tier-preserving lane exists, so it always
+asks. The reasoning was sound and the premise was false.
+
+**The rule:** before writing a policy that names a lane, model, or tool, confirm something
+can actually invoke it — grep the agent definitions and the spawn contract, not the prose
+table. A capability claimed in documentation is a claim to verify, especially when it is the
+half of the argument that makes your conclusion work.

@@ -1,6 +1,6 @@
 {
   "name": "gem-advisor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Antigravity-native risk-gated selective routing: default solo delivery, targeted bounded or complex implementers, and enforced read-only audit with multi-model failover.",
   "author": {
     "name": "Toshon Jennings"

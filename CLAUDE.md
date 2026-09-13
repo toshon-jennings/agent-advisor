@@ -13,7 +13,9 @@ and the hub stops being the source of truth the moment one exists.
 
 The exceptions are the files the hub does not manage — each spoke's `HANDOFF.md` and
 `MISTAKES.md`. Those are spoke-local by design; `platforms/<p>/spoke.manifest` lists
-exactly what the hub owns.
+exactly what the hub owns. Note that `.gitignore` **is** hub-managed, and `.claude` and
+`.DS_Store` may never be managed paths at all: they are the names Guard 5 exempts and rsync
+excludes, and rsync's `--exclude` does not apply to a transfer root.
 
 ## Making a change
 
@@ -44,7 +46,7 @@ block — that is what `--push` is for.
 If you are about to tell a human to "remember" a procedural step, add a check instead.
 
 Each spoke has one too, generated from its `spoke.manifest` by
-`scripts/gen-spoke-hooks.sh` so a spoke's self-check and the hub's pre-export check cannot
+`scripts/gen-spoke-checks.sh` so a spoke's self-check and the hub's pre-export check cannot
 disagree. **Regenerate and `--push` after changing any `native_validator` line.**
 
 `core.hooksPath` is local git config, not a tracked file, so it does not survive a fresh

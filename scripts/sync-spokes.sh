@@ -125,7 +125,13 @@ path_is_sane() {
     case "$part" in
       # `.git` is fatal rather than merely unwise: managing it would let a push replace
       # the index and HEAD that rollback itself depends on.
-      '' | '.' | '..' | '.git' ) return 1 ;;
+      #
+      # `.claude` and `.DS_Store` are rejected for a subtler reason: they are the names
+      # Guard 5 exempts and rsync excludes, and rsync's --exclude does NOT apply to the
+      # transfer root. Managing `pkg/.claude` would therefore make it the root, exempt it
+      # from the ignored-file guard, and let --delete remove its existing contents with
+      # nothing to restore them. A name cannot be both spoke-local and hub-managed.
+      '' | '.' | '..' | '.git' | '.claude' | '.DS_Store' ) return 1 ;;
     esac
   done
   return 0
@@ -470,7 +476,14 @@ apply_platform() {
   local apply_failed=0
   while IFS= read -r rel; do
     if [ -d "$hub_tree/$rel" ]; then
-      rsync -a --delete --exclude '.git' --exclude '.DS_Store' --exclude '.claude' \
+      # --checksum, not rsync's default quick-check. The default compares size and
+      # mtime, and this hub writes files programmatically: two versions of the same file
+      # can easily share a byte count and be written in the same second, at which point
+      # rsync silently skips a genuinely changed file and reports success. That is not a
+      # hypothetical — it was reproduced deterministically on a fresh fixture, and only
+      # the post-apply drift re-check caught it. Content hashing costs nothing at this
+      # repo size and removes the failure mode entirely.
+      rsync -a --checksum --delete --exclude '.git' --exclude '.DS_Store' --exclude '.claude' \
         "$hub_tree/$rel/" "$spoke/$rel/" || apply_failed=1
     else
       # copy-then-move: replaces the directory entry rather than writing through the
@@ -597,13 +610,22 @@ for required in rsync git diff; do
 done
 
 # `core.hooksPath` is local git config and does not survive a clone, so a fresh checkout
-# of the hub has no pre-commit hook until something sets it. Set it here: this script is
-# the thing anyone working on the hub runs first, so nobody has to be told.
+# of the hub has no pre-commit hook until something sets it.
+#
+# Only --push may set it. `--check` is documented as writing nothing, and .git/config is
+# something; a read-only mode that quietly reconfigures the repository it is inspecting is
+# exactly the kind of surprise the rest of this script exists to prevent. In check mode we
+# say so and let the caller decide.
 if git -C "$hub_root" rev-parse --is-inside-work-tree >/dev/null 2>&1 &&
    [ -x "$hub_root/scripts/hooks/pre-commit" ] &&
    [ "$(git -C "$hub_root" config core.hooksPath 2>/dev/null)" != "scripts/hooks" ]; then
-  git -C "$hub_root" config core.hooksPath scripts/hooks &&
-    note "enabled the hub's pre-commit hook (core.hooksPath=scripts/hooks)"
+  if [ "$mode" = push ]; then
+    git -C "$hub_root" config core.hooksPath scripts/hooks &&
+      note "enabled the hub's pre-commit hook (core.hooksPath=scripts/hooks)"
+  else
+    note "note: the hub's pre-commit hook is not enabled."
+    note "      run: git config core.hooksPath scripts/hooks   (or any --push does it)"
+  fi
 fi
 
 scratch=$(mktemp -d) || { printf 'ERROR: could not create a temp dir\n' >&2; exit 4; }

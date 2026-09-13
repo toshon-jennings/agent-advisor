@@ -2,7 +2,7 @@
 #
 # The hub owns every path listed under [paths]. Anything in the spoke that is not
 # listed here is spoke-local and is never touched by scripts/sync-spokes.sh:
-# HANDOFF.md, MISTAKES.md, .gitignore, .claude/, and the git metadata itself.
+# HANDOFF.md, MISTAKES.md, and the git metadata itself.
 
 platform_name=Codex
 spoke_path=~/sol-advisor-portable

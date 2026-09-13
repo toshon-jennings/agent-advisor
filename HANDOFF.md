@@ -422,6 +422,64 @@ failover happened.
 
 - [x] Decided and aligned through the hub; exported and validated.
 
+## Milestone 10 — Sixth review round
+
+Same lane, `reviewer-codex`, `gpt-5.6-sol` / read-only / high. **VERDICT: fix-first**,
+9 findings. It accepted the injection fix, the portability guard, attribution, the
+newsletter-check removal and the 125-line ceiling, and confirmed Claude's behaviour was
+genuinely unchanged. All 9 confirmed and fixed:
+
+- [x] **R6-1 — `.claude`/`.DS_Store` were legal managed paths.** rsync's `--exclude` does
+      not apply to a transfer root, and Guard 5 exempts the same names, so managing
+      `pkg/.claude` would have exempted it from the ignored-file guard and let `--delete`
+      remove its contents unrecoverably. Now rejected by `path_is_sane`. Verified: the
+      manifest is refused and the file survives.
+- [x] **R6-2 — `--check` wrote `.git/config`.** The hooksPath self-enable ran in both
+      modes, so a mode documented as writing nothing reconfigured the repository it was
+      inspecting. Now only `--push` sets it; `--check` prints the one-line command instead.
+- [x] **R6-3 — the Antigravity spoke README still carried the old failover rule.** The
+      previous round's "resolved across all seven files" claim was wrong: this file words
+      it as `-> Gemini Pro 3.1 fresh-context review`, which none of the grep patterns used
+      to find the others matched. The defect was live in a public README. Also corrected
+      the same `enable_*_tools` overstatement there that the hub docs had already fixed.
+- [x] **R6-4 — the prescribed failover target did not exist.** The resolution named
+      `GPT-OSS` as a tier-preserving lane. `scripts/verify.sh` restricts agent models to
+      `{flash, flash_lite, pro, inherit}` and the spawn contract accepts
+      `flash | pro | inherit`: **no cross-vendor subagent is invocable at all.** Every
+      GPT-OSS reference is removed, and the rule now states the true consequence — every
+      reviewer failover available to Antigravity lowers the tier, so it asks, exactly like
+      Claude Code. A new invocability note records that the lane table's "Claude Opus"
+      cross-model column is intent, not a lane that can be spawned today.
+- [x] **R6-5 — the canonical spec contradicted itself.** `selective-route.md` still called
+      the exception "user-authorized" full stop, and the tier table offered a downgrade to
+      context-clean that the next row forbids. Both corrected; context-clean is now stated
+      as unreachable by authorization because it is definitionally the chair's own model.
+- [x] **R6-6 — the README validator matrix still said `sh`** for the two bash validators,
+      reproducing the exact Ubuntu failure CI had caught. Corrected, with the reason.
+- [x] **R6-7 — orientation text called `.gitignore` spoke-local** although all three
+      manifests manage it, and `CLAUDE.md` named the renamed `gen-spoke-hooks.sh`.
+- [x] **R6-8 — version drift.** README reported fork 2.0.0 / claude 0.3.0 against actual
+      2.0.1 / 0.3.1, and Antigravity shipped a behaviour change on 0.1.0. Matrix synced;
+      `gem-advisor` bumped to 0.1.1.
+- [x] **R6-9 — the Claude derivation figures were stale again**, since the failover edit
+      added sentences. Re-measured: 147 → 151 sentences, percentages unchanged.
+
+### Found by re-testing, not by the reviewer: rsync could skip a changed file
+
+The regression sweep after these fixes failed the happy path deterministically on a fresh
+fixture. Cause: `rsync -a` quick-checks on **size and mtime**. This hub writes files
+programmatically, so two versions of one file can share a byte count and be written in the
+same second — at which point rsync skipped a genuinely changed file and returned success.
+
+`--checksum` is now passed, making the comparison content-based. Verified against a fixture
+with artificially identical size *and* mtime.
+
+Two things worth keeping from this: the bug was invisible to every guard except the
+post-apply drift re-check added in round 3, which is the check that caught it; and it means
+a `--push` could have reported success while leaving a spoke stale. No real push is known
+to have hit it — every real push re-verified an empty post-push diff — but the window was
+open the whole time.
+
 ## Known blind spots
 
 - **`--push` has now run against a real spoke exactly once**, exporting a single-file

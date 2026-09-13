@@ -158,8 +158,12 @@ So the gate is one question: **does the independence tier survive the failover?*
 | Failover | Requirement |
 |---|---|
 | Preserves the tier (cross-vendor → a different cross-vendor lane) | **Automatic.** Declare it; do not stall. |
-| Lowers the tier (cross-vendor → cross-model same-vendor, or → context-clean) | **Authorization required.** Ask and wait. |
+| Lowers the tier (cross-vendor → cross-model same-vendor) | **Authorization required.** Ask and wait. |
 | Target shares the chair's model | **Never valid.** Not a failover; refuse and stop. |
+
+Context-clean-only does not appear in the second row because it is not reachable through
+it: a reviewer is context-clean-only precisely when it shares the chair's model, which the
+third row refuses outright. There is no authorized path down to that tier.
 
 The third row is absolute and is not a judgment call. A reviewer pinned to the chair's own
 model is context-clean and nothing more, so routing to it is not a weaker review of the

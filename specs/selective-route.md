@@ -94,7 +94,9 @@ does not silently fall back to the orchestrator's own hands, and it does not sho
 whichever lane happens to be installed. Availability never selects a lane — the
 orchestrator selects it, and then preflights that selection.
 
-The single exception is the announced, user-authorized review failover defined in
-[`reviewer-verdict.md`](reviewer-verdict.md). It is permitted only because it is
-declared and authorized. The rule was never that a route may not move down; it is that
-it may not move down **silently**.
+The single exception is the announced review failover defined in
+[`reviewer-verdict.md`](reviewer-verdict.md), which is gated on the independence tier: a
+failover that preserves it is automatic, one that lowers it requires the user's
+authorization, and one onto the chair's own model is refused outright. Every case is
+declared. The rule was never that a route may not move down; it is that it may not move
+down **silently**.

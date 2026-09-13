@@ -54,7 +54,7 @@ The contract between hub and spoke. Key=value lines, then a `[paths]` block.
 | `native_validator` | Repeatable. A shell command run from the tree root, in order |
 | `[paths]` | The paths the hub **owns**. Anything else in the spoke is spoke-local and never touched |
 
-Spoke-local by omission in all three: `HANDOFF.md`, `MISTAKES.md`, `.gitignore`, `.claude/`.
+Spoke-local by omission in all three: `HANDOFF.md` and `MISTAKES.md`. `.gitignore` **is** hub-managed — it carries the negations that stop the global gitignore hiding `SUMMARY.md`/`HANDOFF.md`, and that has to be uniform to be reliable.
 
 ## `scripts/`
 
