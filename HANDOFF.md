@@ -10,6 +10,49 @@ governs, validates, and synchronizes the three selective-routing spokes — Code
 
 Last updated: 2026-09-12.
 
+## STATE OF PLAY — read this first
+
+Everything below this section is a chronological record of how the project got here. It is
+worth reading for the reasoning, not for the current state. The current state is:
+
+**All four repos are committed, pushed, and green.** Hub `agent-advisor` plus three spokes;
+`./scripts/sync-spokes.sh --check` exits 0 with all platforms in sync and valid; GitHub
+Actions passing on all four.
+
+**Seven review rounds have run** on the `reviewer-codex` lane (cross-vendor, `gpt-5.6-sol`,
+read-only sandbox, pin verified from the run header). 45 findings, every one confirmed
+against the files before acting, every one fixed. **No `ship` verdict has been reached.**
+Findings by round: 7 → 8 → 9 → 4 → 4 → 9 → 4.
+
+### The three things still genuinely open
+
+1. **Antigravity's cross-model review is documented but not invocable.** The max tier
+   describes review by Claude Opus; `platforms/antigravity/scripts/verify.sh` permits agent
+   models of only `flash`, `flash_lite`, `pro`, `inherit`, and the spawn contract accepts
+   `flash | pro | inherit`. Either the platform can invoke non-Gemini subagents by a
+   mechanism these files do not describe — in which case the validator and spawn contract
+   are wrong — or the tier overpromises. Currently written down as intent rather than
+   capability, which is accurate but is not a fix. **Only Toshon can settle this.**
+2. **`specs/` is not machine-checked** against the platform implementations (see below).
+3. **Whether to run an eighth review round.** Toshon's call.
+
+### The failure pattern to guard against
+
+A large share of the later findings were defects introduced while fixing earlier ones, and
+the single most repeated mistake was **trusting my own memory of what I had already fixed
+instead of re-reading the files.** Three separate claims shipped that the files
+contradicted: a `verify.sh` check that did not exist, a failover lane that could not be
+invoked, and "fixed across all seven files" after a grep whose patterns came from the files
+already found.
+
+Two consecutive rounds also caught a fix landing on one side of the hub/platform boundary
+and not the other. `specs/` and `README.md` describe the same rules the platforms
+implement, are always in scope for a rule change, and are the two places the sync tooling
+will never flag because specs are deliberately not exported.
+
+`MISTAKES.md` carries all of this as rules. Read it before making a claim about what is
+already done.
+
 ## Milestone 1 — Orientation and inspection
 
 - [x] Inspect `~/sol-advisor-portable` — structure, `.codex-plugin/plugin.json`, three
@@ -131,7 +174,8 @@ never commits.
 
 ### 4. Not yet done
 
-- [ ] No git remote on the hub; nothing committed yet beyond the working tree
+- [x] Hub has a remote (`github.com/toshon-jennings/agent-advisor`, public), is committed
+      and pushed, and CI is green.
 - [ ] `specs/` is not machine-checked against the platform implementations — the specs
       are a human-readable contract by design (see `specs/README.md`), but a drift check
       for the *claims in the comparison matrix* (lane pins, tool lists) would be cheap
@@ -201,10 +245,8 @@ Post-correction guard matrix, all re-verified against a synthetic fixture:
 | post-push validator fails | rolled back to committed state, tree clean | 2 |
 | spoke dirty / wrong origin / path absent from hub | refused, nothing written | 3 |
 
-- [ ] **A new fresh review is required and has not been run.** Any correction invalidates
-      the prior verdict. The next review must use the same declared lane
-      (`reviewer-codex`) and a prompt that requests `FINDINGS:` inline so the wrapper
-      accepts the block.
+- [x] A new fresh review was obtained (round 3), and four more after it. The
+      `FINDINGS:`-inline prompt requirement stuck; every round since has parsed cleanly.
 
 ## Milestone 6 — Second review round
 
@@ -370,10 +412,9 @@ fallen sharply — rounds 4 and 5 found no new data-loss path under normal singl
 operation — but the count has not reached zero, and a sixth round would very likely find
 more documentation-consistency issues.
 
-- [ ] **Decide whether to run a sixth review round.** Each round costs Codex quota and
-      roughly ten minutes. The remaining findings have been consistency and truthfulness
-      issues rather than defects that lose data. This is a spend decision, not a technical
-      one, which is why it is recorded here rather than taken unilaterally.
+- [x] The sixth round ran, and a seventh. Both found real defects, which retrospectively
+      answers the question this item was hedging: the run was worth it. See Milestones 10
+      and 11.
 
 ### 5. RESOLVED — the Antigravity failover conflict
 
