@@ -36,11 +36,19 @@ Both tiers share four exact modes, and at most one auxiliary subagent by default
 
 ## Lanes
 
-| Lane (`subagent_type`) | Default Model | High-Stakes / Cross-Model | Tool Isolation |
-|---|---|---|---|
-| `gem-implementer-bounded` | `Gemini Flash 3.8` | `Claude Sonnet` | Write + Bash, **no subagent spawning** |
-| `gem-implementer-complex` | `Gemini Pro 3.1` | `Claude Opus` | Write + Bash, **no subagent spawning** |
-| `gem-reviewer` | `Gemini Pro 3.1` | `Claude Opus` | **Strictly read-only**, no bash, no agent tools |
+| Lane (`subagent_type`) | Model | Tool Isolation |
+|---|---|---|
+| `gem-implementer-bounded` | `Gemini Flash 3.8` (`flash`) | Write + Bash, **no subagent spawning** |
+| `gem-implementer-complex` | `Gemini Pro 3.1` (`pro`) | Write + Bash, **no subagent spawning** |
+| `gem-reviewer` | `Gemini Pro 3.1` (`pro`) | **Strictly read-only**, no bash, no agent tools |
+
+**Subagent lanes are Gemini-only.** `scripts/verify.sh` permits an agent `model:` of
+`flash`, `flash_lite`, `pro` or `inherit`, and the spawn contract accepts
+`flash | pro | inherit`. Claude models can hold the **primary session** at the max tier,
+but cannot be spawned as a subagent, so cross-vendor *review* is available only when the
+chair itself is Claude — at which point every Gemini reviewer lane is cross-vendor to it.
+Under a Gemini chair, review is same-vendor at best, and a reviewer on the chair's own
+model is context-clean only.
 
 ### Enforced Isolation
 - **No recursive delegation**: Workers cannot spawn further subagents — their frontmatter `tools:` list names no subagent tool, so the single-auxiliary maximum cannot be broken by a worker delegating onward.

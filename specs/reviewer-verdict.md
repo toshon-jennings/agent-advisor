@@ -225,16 +225,29 @@ claim, so every failover it can perform needs authorization. It also spends Clau
 that the out-of-process lane existed to protect, so the failover is worse on two axes at
 once.
 
-**Antigravity usually does not need to ask.** Its heavyweight tier treats Claude quota
-exhaustion as an expected operating condition rather than an exception — the everyday tier
-is built to spend none at all — and a rule that halts on an expected condition halts
-constantly. Under a Gemini chair with a Claude reviewer, a 429 can be met by moving to
-another cross-vendor lane, which preserves the tier: automatic, declared, no stall.
+**Antigravity depends on which model holds the chair.** Every subagent it can spawn runs
+a Gemini model: `scripts/verify.sh` restricts an agent's `model:` to `flash`, `flash_lite`,
+`pro` or `inherit`, and the spawn contract accepts `flash | pro | inherit`. There is no
+invocable cross-vendor reviewer lane, so the tier a review can carry is decided by what the
+chair is running:
 
-What Antigravity may **not** do is fail over to `Gemini Pro 3.1` while `Gemini Pro 3.1`
-holds the chair. That is the third row of the table — the reviewer would share the chair's
-model, making the review context-clean only — and reporting it as "clean fresh-context
-review" would state an independence the run did not have. When no equally independent lane
-is reachable, the choice between a weaker review and stopping belongs to the user, and that
-is the one case where Antigravity stalls.
+| Chair | Reviewer lane | Independence | Failover between Gemini lanes |
+|---|---|---|---|
+| Claude Opus (max tier) | `pro`, or `flash` | cross-vendor | preserves the tier — **automatic, no stall** |
+| Gemini Pro | `flash` | cross-model, same vendor | same-vendor at best; any lowering needs authorization |
+| Gemini Pro | `pro` or `inherit` | context-clean only | never a valid target |
+
+So neither "Antigravity always asks" nor "it never needs to" is true. Under a Claude chair
+every Gemini lane is cross-vendor and moving between them changes nothing the acceptance
+claims. Under a Gemini chair there is no cross-vendor lane to preserve, and the honest move
+is to declare cross-model same-vendor from the start rather than claim cross-vendor and
+degrade later.
+
+What it may never do is review with the chair's own model — `pro` or `inherit` beneath a
+Gemini Pro chair — and report it as "clean fresh-context review". That states an
+independence the run did not have.
+
+Its heavyweight tier treats Claude quota exhaustion as an expected operating condition
+rather than an exception, which is why it wants to keep moving. The rule lets it, exactly
+as far as the claim survives.
 

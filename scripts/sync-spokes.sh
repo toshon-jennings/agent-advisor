@@ -98,9 +98,14 @@ is_exempt() {
   # are the paths rsync never writes and Guard 5 tolerates, so `git clean` must spare
   # them too. Compared component-by-component: a file literally named
   # "weird\n.claude\nfile" must NOT be classed as exempt.
-  local path=$1 part
-  local IFS=/
-  for part in $path; do
+  # Same glob hazard as path_is_sane, and here it is the dangerous direction: a false
+  # positive marks a file exempt from Guard 5, after which nothing stops `rsync --delete`
+  # removing it. git ls-files output is arbitrary filenames, so this must not glob.
+  local path=$1 part rest
+  rest=$path
+  while [ -n "$rest" ]; do
+    part=${rest%%/*}
+    if [ "$part" = "$rest" ]; then rest=""; else rest=${rest#*/}; fi
     case "$part" in
       '.DS_Store' | '.git' | '.claude' ) return 0 ;;
     esac
@@ -120,8 +125,14 @@ path_is_sane() {
   case "$rel" in
     '' | /* | '~'* ) return 1 ;;
   esac
-  local IFS=/
-  for part in $rel; do
+  # Split with parameter expansion, NOT `for part in $rel`. An unquoted expansion is
+  # subject to pathname expansion, so a component like `.?laude` would glob against the
+  # current directory and become `.claude` — which in is_exempt() below meant a file could
+  # be falsely classified spoke-local and then deleted by `rsync --delete`. Reproduced.
+  local rest=$rel
+  while [ -n "$rest" ]; do
+    part=${rest%%/*}
+    if [ "$part" = "$rest" ]; then rest=""; else rest=${rest#*/}; fi
     case "$part" in
       # `.git` is fatal rather than merely unwise: managing it would let a push replace
       # the index and HEAD that rollback itself depends on.
@@ -300,9 +311,20 @@ EOF
     fi
     case "$vline" in
       "sh "*)
-        script=${vline#sh }
-        script=${script%% *}
-        if [ -f "$hub_tree/$script" ]; then
+        # Tokenise properly: `sh  x.sh` (double space) yielded an empty script and
+        # `sh -e x.sh` yielded `-e`, so both silently skipped the check that exists to
+        # stop a bash script being run by dash in CI. Word splitting is safe here because
+        # validator_is_sane has already excluded every glob metacharacter.
+        set -- $vline
+        shift                      # drop the interpreter
+        script=""
+        while [ "$#" -gt 0 ]; do
+          case $1 in
+            -*) shift ;;           # skip interpreter options
+            *) script=$1; break ;;
+          esac
+        done
+        if [ -n "$script" ] && [ -f "$hub_tree/$script" ]; then
           shebang=$(head -1 "$hub_tree/$script")
           case "$shebang" in
             *bash*)

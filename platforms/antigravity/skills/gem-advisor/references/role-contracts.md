@@ -39,7 +39,7 @@ or unregistered is a hard stop.
 
 ## Lane pins and capabilities
 
-| Lane (`subagent_type`) | Default Model | High-Stakes / Cross-Model | Failover Model | Tool Permissions | Use |
+| Lane (`subagent_type`) | Default Model | Aspirational cross-model (NOT invocable — see below) | Failover Model | Tool Permissions | Use |
 |---|---|---|---|---|---|
 | `gem-implementer-bounded` | `Gemini Flash 3.8` (`flash`) | `Claude Sonnet` | `Gemini Flash 3.7 / 3.6` | `enable_write_tools: true`, `enable_subagent_tools: false` | Delegate/full bounded, fully specified work |
 | `gem-implementer-complex` | `Gemini Pro 3.1` (`pro`) | `Claude Opus` | `Gemini Pro 3.1` | `enable_write_tools: true`, `enable_subagent_tools: false` | Delegate/full judgment-heavy or high-risk work |

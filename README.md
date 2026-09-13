@@ -79,10 +79,12 @@ The same rule produces different behaviour in each harness because their lanes d
 - **Claude Code always asks.** Its only in-process failover beneath an Opus chair is
   cross-model *same-vendor* — strictly lower than the cross-vendor lane it declares. Every
   failover available to it lowers the claim.
-- **Antigravity usually does not.** Under a Gemini chair with a Claude reviewer, a 429 can
-  be answered by moving to another cross-vendor lane, preserving the tier. Its heavyweight
-  tier treats Claude quota exhaustion as an expected condition rather than an exception,
-  and a workflow that halts on an expected condition halts constantly.
+- **Antigravity depends on its chair.** Every subagent it can spawn runs a Gemini model —
+  its own validator permits only `flash`, `flash_lite`, `pro`, `inherit` — so there is no
+  cross-vendor reviewer lane to reach. Under a *Claude* chair every Gemini lane is
+  cross-vendor, so failing over between them preserves the tier and needs no permission.
+  Under a *Gemini* chair there is no cross-vendor review to be had at all, and a reviewer
+  on the chair's own model is refused outright.
 
 Getting here fixed a real defect rather than settling an argument: Antigravity's failover
 previously routed to `Gemini Pro 3.1` — which can be the chair's own model — and reported

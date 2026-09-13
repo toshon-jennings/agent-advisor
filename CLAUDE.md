@@ -52,8 +52,9 @@ disagree. **Regenerate and `--push` after changing any `native_validator` line.*
 `core.hooksPath` is local git config, not a tracked file, so it does not survive a fresh
 clone. **You should never have to set it by hand** — three things do it for you:
 
-- `scripts/sync-spokes.sh` sets it for the hub on any invocation, and for each spoke it
-  successfully pushes to.
+- `scripts/sync-spokes.sh --push` sets it for the hub, and for each spoke it successfully
+  pushes to. `--check` does not: it is documented as writing nothing, and `.git/config` is
+  something — it prints the one-line command instead.
 - `install.sh` sets it in the Codex and Antigravity spokes.
 - **CI is the backstop that needs no local state at all.** Every repo has a `validate`
   workflow running the same native validators on push and pull request, so a clone with

@@ -480,6 +480,39 @@ a `--push` could have reported success while leaving a spoke stale. No real push
 to have hit it — every real push re-verified an empty post-push diff — but the window was
 open the whole time.
 
+## Milestone 11 — Seventh review round
+
+Same lane. **VERDICT: fix-first**, 4 findings — down from 9, and it confirmed `--checksum`
+sound, `--check` genuinely side-effect-free, attribution preserved, and the managed trees
+matching. All 4 confirmed and fixed:
+
+- [x] **R7-1 — `for part in $path` glob-expanded.** Both `path_is_sane` and `is_exempt`
+      split an unquoted variable, which is subject to pathname expansion. A component like
+      `.?laude` globs against the current directory and becomes `.claude` — and in
+      `is_exempt` that is the dangerous direction: the file is falsely marked spoke-local,
+      skips Guard 5, and `rsync --delete` removes it with nothing to restore it. Both now
+      split with parameter expansion. Verified with a git-ignored file literally named
+      `pkg/.?laude`: refused, survived.
+- [x] **R7-2 — the false Antigravity claim was still in the hub's own docs.** Round 6
+      corrected the platform files and left `README.md` and `specs/reviewer-verdict.md`
+      saying Antigravity "usually does not need to ask" by "moving to another cross-vendor
+      lane". **This is the second round in a row where a fix landed in the platform and
+      missed the hub** — the same shape as R6-3.
+      The reviewer also showed the replacement claim was itself wrong: "Antigravity always
+      asks" is not generally true, because under a **Claude Opus chair** every Gemini lane
+      is cross-vendor, so `pro` → `flash` preserves the tier and needs no permission. The
+      account is now per chair, with a table, in both the spec and the README, and the
+      platform lane tables no longer advertise Claude subagents as an available column.
+- [x] **R7-3 — `CLAUDE.md` still said every sync invocation enables the hook**,
+      contradicting both its own earlier line and the corrected implementation.
+- [x] **R7-4 — the shebang guard was bypassable.** `sh  verify.sh` (double space) parsed
+      to an empty script and `sh -e verify.sh` parsed to `-e`, so both skipped the check
+      that stops a bash script being run by dash in CI. Now tokenised properly with
+      interpreter options skipped. Verified: all three forms refused, `bash verify.sh`
+      still passes.
+
+Findings by round: 7 → 8 → 9 → 4 → 4 → 9 → 4.
+
 ## Known blind spots
 
 - **`--push` has now run against a real spoke exactly once**, exporting a single-file

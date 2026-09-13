@@ -161,3 +161,26 @@ asks. The reasoning was sound and the premise was false.
 can actually invoke it — grep the agent definitions and the spawn contract, not the prose
 table. A capability claimed in documentation is a claim to verify, especially when it is the
 half of the argument that makes your conclusion work.
+
+## 2026-09-12 — Fixed the exported copy and left the false claim upstream. Twice.
+
+**What happened:** the failover correction was applied to `platforms/antigravity/**` but not
+to `README.md` and `specs/reviewer-verdict.md`, which kept asserting that Antigravity
+"usually does not need to ask" by moving to "another cross-vendor lane" — a lane that does
+not exist. The previous round had the mirror-image version of this: the hub docs were fixed
+and the spoke's own README was missed.
+
+**Root cause:** I treat "the platform files" and "the hub docs" as separate jobs and finish
+one. Both describe the same behaviour, so a change to the behaviour is not done until both
+are consistent — but nothing forces me to visit both, and the sync tooling cannot help
+because `specs/` is deliberately not exported.
+
+**Consequence:** two consecutive rounds shipped a document asserting something the
+implementation contradicted, in a project whose entire premise is that the three
+implementations stay honest with each other.
+
+**The rule:** a behaviour change is scoped by *claim*, not by directory. Before calling one
+done, grep the whole tree — hub and platforms — for the claim's subject and read every hit.
+For this project specifically: `specs/` and `README.md` describe the same rules the
+platforms implement, so they are always in scope for a rule change, and they are the two
+places the sync tooling will never flag.
