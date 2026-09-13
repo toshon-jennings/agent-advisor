@@ -98,7 +98,7 @@ it as "clean fresh-context review." See
 | | **Codex** — Sol Advisor | **Claude Code** — Claude Advisor | **Antigravity** — Gem Advisor |
 |---|---|---|---|
 | Spoke | `~/sol-advisor-portable` | `~/claude-advisor` | `~/gem-advisor` |
-| Plugin version | 0.6.0 (portable fork 2.0.1) | 0.3.1 | 0.1.1 |
+| Plugin version | 0.6.0 (portable fork 2.0.2) | 0.3.2 | 0.1.2 |
 | Chairs | Sol / High (`gpt-5.6-sol`), Astra / High (`gpt-6-astra`), Daybreak Blue / High | Opus 5 (`claude-opus-5`), Fable 5.1 (`claude-fable-5-1`) | everyday (Gemini Pro 3.1 / Flash 3.8), max (Gemini Pro 3.1 High or Claude Opus) |
 | How chairs vary | Thin alias skills applying **one** substitution: the primary model. Every auxiliary lane stays pinned. | Chair skills set exactly two values: which model presides, and how low its route may go. | Two **tiers**, differing in chair, route floor, and acceptance bar. |
 | Route floor | `solo` | `solo` (Opus) · `audit` (Fable) | `solo` (everyday) · independent review is the norm (max) |
@@ -111,7 +111,7 @@ it as "clean fresh-context review." See
 | Bounded implementer | `gpt-5.6-luna` / max | `sonnet` | `flash` (Gemini Flash 3.8) |
 | Complex implementer | `gpt-5.6-terra` / high | `opus` | `pro` (Gemini Pro 3.1) |
 | Default reviewer | `gpt-5.6-sol` / high, in-process | **`reviewer-codex`** — `gpt-5.6-sol`, out-of-process | `gem-reviewer` — `pro` |
-| Review failover | — | `reviewer-sonnet` (Opus chair) | multi-model, incl. Claude at the max tier |
+| Review failover | — | `reviewer-sonnet` (Opus chair) | between Gemini lanes only — `pro` → `flash`; Claude is a **chair** option, never a reviewer lane |
 | Weakest lane, never a failover | — | `reviewer` (pinned to the Opus chair's own model) | — |
 
 Claude Advisor is the outlier: its **default** review lane is out-of-process, in a
