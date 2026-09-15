@@ -4,9 +4,9 @@ One routing model, three execution harnesses.
 
 > **This repo is maintainer infrastructure — there is nothing here to install.**
 > To *use* selective routing, install the plugin for your harness:
-> [claude-advisor](https://github.com/toshon-jennings/claude-advisor) (Claude Code),
-> [gem-advisor](https://github.com/toshon-jennings/gem-advisor) (Antigravity), or
-> [sol-advisor-portable](https://github.com/toshon-jennings/sol-advisor-portable), which adds 2 primary chairs (Daybreak Blue and Astra), or Dan McAteer's original [sol-advisor](https://github.com/DannyMac180/sol-advisor) (Codex).
+> - [claude-advisor](https://github.com/toshon-jennings/claude-advisor) (Claude Code)
+> - [gem-advisor](https://github.com/toshon-jennings/gem-advisor) (Antigravity)
+> - [sol-advisor-portable](https://github.com/toshon-jennings/sol-advisor-portable), which adds 2 primary chairs (Daybreak Blue and Astra), or Dan McAteer's original [sol-advisor](https://github.com/DannyMac180/sol-advisor) (Codex).
 > This repo exists so those three stay honest with each other.
 >
 > It is public for one reason: [`specs/`](specs/) and the
