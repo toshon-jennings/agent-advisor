@@ -14,7 +14,7 @@ to its own repository. It is not itself installed into any harness.
 | `README.md` | The philosophy, the cross-platform comparison matrix, sync usage and exit codes |
 | `ORIGIN.md` | Attribution to Daniel McAteer; how close each platform is to the original |
 | `SUMMARY.md` | This file |
-| `HANDOFF.md` | Active milestone tracking and open items |
+| `HANDOFF.md` | Active milestone tracking and open items — local-only, intentionally untracked |
 | `MISTAKES.md` | Mistake ledger, newest first |
 | `LICENSE` | MIT, hub notice, names the upstream notice |
 
@@ -54,7 +54,7 @@ The contract between hub and spoke. Key=value lines, then a `[paths]` block.
 | `native_validator` | Repeatable. A shell command run from the tree root, in order |
 | `[paths]` | The paths the hub **owns**. Anything else in the spoke is spoke-local and never touched |
 
-Spoke-local by omission in all three: `HANDOFF.md` and `MISTAKES.md`. `.gitignore` **is** hub-managed — it carries the negations that stop the global gitignore hiding `SUMMARY.md`/`HANDOFF.md`, and that has to be uniform to be reliable.
+Spoke-local by omission in all three: `HANDOFF.md` and `MISTAKES.md`. `.gitignore` **is** hub-managed — it carries the negations that stop the global gitignore hiding `SUMMARY.md` (and, in `platforms/*`, each spoke's own `HANDOFF.md`), and that has to be uniform to be reliable. The hub's own `HANDOFF.md` is deliberately local-only and untracked.
 
 ## `scripts/`
 

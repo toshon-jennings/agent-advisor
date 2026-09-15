@@ -76,8 +76,10 @@ CI checks for exactly that and fails if the generated files are stale.
 - **`platforms/codex/README.md` is validated by phrase matching.** Those checks are now
   whitespace-insensitive, so reflowing is safe, but the line cap (125) is real.
 - **The global gitignore at `~/.config/git/ignore` excludes `SUMMARY.md` and `HANDOFF.md`.**
-  Every `.gitignore` here negates it. If you add a repo, do the same, or those files will
-  sit untracked and unrecoverable while `git status` looks clean.
+  Every platform `.gitignore` negates it for its spoke-local files, and the hub root
+  negates it for `SUMMARY.md`. The hub's own `HANDOFF.md` is deliberately local-only
+  (untracked, kept on disk). If you add a repo, carry the negations its tracked files
+  need, or those files will sit untracked and unrecoverable while `git status` looks clean.
 - **Isolation is enforced by an absence.** Reviewer agents hold no write tools and no Bash;
   implementers hold no `Agent` tool. Adding a tool for an unrelated reason silently revokes
   the guarantee, so `platforms/claude/scripts/verify.sh` check 10 asserts it.

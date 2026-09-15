@@ -3,11 +3,10 @@
 **/.claude/taste-signals.jsonl
 **/.claude/taste-watch/
 
-# The user's global excludes (~/.config/git/ignore) drop SUMMARY.md and HANDOFF.md,
-# which are required deliverables here — a hub whose own source map is untracked is
-# not a source of truth. Re-include them explicitly; a negation in a repo .gitignore
-# overrides the global file.
+# The user's global excludes (~/.config/git/ignore) drop SUMMARY.md and HANDOFF.md.
+# SUMMARY.md is a required deliverable here — a hub whose own source map is untracked
+# is not a source of truth. Re-include it explicitly; a negation in a repo .gitignore
+# overrides the global file. HANDOFF.md is deliberately local-only (untracked, kept on
+# disk), so the global exclusion is left in place for it.
 !SUMMARY.md
-!HANDOFF.md
 !**/SUMMARY.md
-!**/HANDOFF.md
