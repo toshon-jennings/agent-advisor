@@ -77,7 +77,7 @@ lands on a weaker lane changes exactly what is being claimed, so it is the user'
 lane running the chair's own model is never a valid target at all — that is the removal of
 independent review, not a weaker version of it.
 
-The same rule produces different behaviour in each harness because their lanes differ:
+The same rule produces different behavior in each harness because their lanes differ:
 
 - **Claude Code always asks.** Its only in-process failover beneath an Opus chair is
   cross-model *same-vendor* — strictly lower than the cross-vendor lane it declares. Every
