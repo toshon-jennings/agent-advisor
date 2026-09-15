@@ -6,7 +6,9 @@ One routing model, three execution harnesses.
 > To *use* selective routing, install the plugin for your harness:
 > - [claude-advisor](https://github.com/toshon-jennings/claude-advisor) (Claude Code)
 > - [gem-advisor](https://github.com/toshon-jennings/gem-advisor) (Antigravity)
-> - [sol-advisor-portable](https://github.com/toshon-jennings/sol-advisor-portable), which adds 2 primary chairs (Daybreak Blue and Astra), or Dan McAteer's original [sol-advisor](https://github.com/DannyMac180/sol-advisor) (Codex).
+> - [sol-advisor-portable](https://github.com/toshon-jennings/sol-advisor-portable) (Codex):
+>   - Adds 2 primary chairs (Daybreak Blue and Astra)
+>   - Adds a one-command installer that works on any machine, stops safely instead of overwriting your setup, a check command to verify the install, short names to pick Sol / Astra / Daybreak, a /sol shortcut, and setup instructions for multiple devices.
 > 
 > This repo exists so those three stay honest with each other.
 >
